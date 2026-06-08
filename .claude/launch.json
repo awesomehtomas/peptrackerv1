@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "peptide-tracker",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8731", "--directory", "C:\\Users\\thoma\\OneDrive\\Desktop"],
+      "port": 8731
+    }
+  ]
+}

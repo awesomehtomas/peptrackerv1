@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="midnight">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peptide Tracker</title>
+<style>
+/* ===================== THEMES ===================== */
+:root,
+[data-theme="midnight"] {
+  --bg: #0b0d12;
+  --bg-elev: #141821;
+  --bg-card: #171c27;
+  --bg-input: #0f131b;
+  --border: #232a37;
+  --border-soft: #1c222e;
+  --text: #e6e9ef;
+  --text-dim: #9aa3b2;
+  --text-faint: #5f6878;
+  --accent: #5b8cff;
+  --accent-soft: #1d2a4d;
+  --accent-text: #ffffff;
+  --good: #3ecf8e;
+  --warn: #f2b34b;
+  --bad: #f2685c;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+  --shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+[data-theme="warm"] {
+  --bg: #1a1513;
+  --bg-elev: #241c18;
+  --bg-card: #2a201b;
+  --bg-input: #1d1714;
+  --border: #3a2c24;
+  --border-soft: #2f241e;
+  --text: #f4e8df;
+  --text-dim: #c4a892;
+  --text-faint: #8a7160;
+  --accent: #e8915b;
+  --accent-soft: #3d2a1d;
+  --accent-text: #1a1513;
+  --good: #b5c46a;
+  --warn: #e8b04b;
+  --bad: #e57a5c;
+  --shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+[data-theme="crisp"] {
+  --bg: #f4f6fa;
+  --bg-elev: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f4f6fa;
+  --border: #e1e6ee;
+  --border-soft: #eaeef4;
+  --text: #1a2230;
+  --text-dim: #5e6b7e;
+  --text-faint: #9aa6b6;
+  --accent: #2f6df0;
+  --accent-soft: #e3ecfe;
+  --accent-text: #ffffff;
+  --good: #1aa06d;
+  --warn: #c98a17;
+  --bad: #d94c3d;
+  --shadow: 0 6px 24px rgba(35,55,90,0.10);
+}
+[data-theme="retro"] {
+  --bg: #050805;
+  --bg-elev: #0a0f0a;
+  --bg-card: #0b110b;
+  --bg-input: #060a06;
+  --border: #1a2e1a;
+  --border-soft: #142414;
+  --text: #b8f7b8;
+  --text-dim: #4fbf4f;
+  --text-faint: #2f7a2f;
+  --accent: #39ff14;
+  --accent-soft: #0f2a0f;
+  --accent-text: #050805;
+  --good: #39ff14;
+  --warn: #e8e84b;
+  --bad: #ff5c5c;
+  --font: "SF Mono", "Cascadia Code", Consolas, monospace;
+  --shadow: 0 0 24px rgba(57,255,20,0.08);
+}
+
+/* ===================== BASE ===================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background .25s, color .25s;
+}
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ===================== LAYOUT ===================== */
+header {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 22px;
+  background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-soft);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.02em; font-size: 17px; white-space: nowrap; }
+.brand .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+nav.tabs { display: flex; gap: 4px; margin-left: 8px; flex-wrap: wrap; }
+nav.tabs button {
+  background: transparent; border: none; color: var(--text-dim);
+  padding: 8px 14px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px;
+  transition: background .15s, color .15s;
+}
+nav.tabs button:hover { color: var(--text); background: var(--bg-card); }
+nav.tabs button.active { color: var(--accent-text); background: var(--accent); }
+.spacer { flex: 1; }
+.icon-btn {
+  background: var(--bg-card); border: 1px solid var(--border);
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 18px; color: var(--text-dim);
+  transition: transform .15s, color .15s, border-color .15s;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--accent); transform: rotate(30deg); }
+
+main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 80px; }
+.view { display: none; }
+.view.active { display: block; animation: fade .25s; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform: none;} }
+
+h1.page-title { font-size: 24px; letter-spacing: -0.02em; margin-bottom: 4px; }
+.page-sub { color: var(--text-dim); margin-bottom: 22px; font-size: 14px; }
+
+/* ===================== CARDS / GRID ===================== */
+.grid { display: grid; gap: 16px; }
+.grid.cols-2 { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.grid.cols-3 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.card.stat { padding: 16px 18px; }
+.stat .num { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.stat .lbl { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.card-head h3 { font-size: 17px; letter-spacing: -0.01em; }
+.card-head .meta { color: var(--text-dim); font-size: 13px; }
+
+.swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 7px; }
+
+/* ===================== FORM ===================== */
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+input, select, textarea {
+  width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 11px; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+textarea { resize: vertical; min-height: 60px; }
+.row { display: flex; gap: 10px; }
+.row > * { flex: 1; }
+
+.btn {
+  background: var(--accent); color: var(--accent-text); border: none;
+  padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 700;
+  transition: filter .15s, transform .05s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn.ghost:hover { color: var(--text); border-color: var(--accent); }
+.btn.sm { padding: 6px 11px; font-size: 13px; font-weight: 600; }
+.btn.danger { background: transparent; color: var(--bad); border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--border)); }
+.btn.danger:hover { background: color-mix(in srgb, var(--bad) 14%, transparent); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.pill.good { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+.pill.warn { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.pill.bad { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+
+.empty { text-align: center; padding: 50px 20px; color: var(--text-faint); }
+.empty .big { font-size: 40px; margin-bottom: 10px; opacity: .6; }
+
+/* progress bar */
+.bar { height: 8px; background: var(--bg-input); border-radius: 99px; overflow: hidden; border: 1px solid var(--border-soft); }
+.bar > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
+.bar.good > span { background: var(--good); }
+.bar.warn > span { background: var(--warn); }
+.bar.bad > span { background: var(--bad); }
+
+.kv { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+.kv span:first-child { color: var(--text-dim); }
+.kv span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ===================== MODAL ===================== */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.55);
+  display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto;
+  backdrop-filter: blur(2px);
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+  width: 100%; max-width: 480px; padding: 22px; box-shadow: var(--shadow); animation: pop .2s;
+}
+.modal.wide { max-width: 600px; }
+@keyframes pop { from { opacity:0; transform: scale(.97) translateY(-6px);} to {opacity:1; transform:none;} }
+.modal h2 { font-size: 19px; margin-bottom: 16px; letter-spacing: -0.01em; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+/* ===================== CALENDAR ===================== */
+.cal-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.cal-head h2 { font-size: 20px; min-width: 200px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-dow { text-align: center; font-size: 12px; color: var(--text-faint); font-weight: 700; padding: 4px 0; text-transform: uppercase; }
+.cal-cell {
+  background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius-sm);
+  min-height: 92px; padding: 6px 7px; cursor: pointer; transition: border-color .15s, background .15s;
+  display: flex; flex-direction: column; gap: 3px; overflow: hidden;
+}
+.cal-cell:hover { border-color: var(--accent); }
+.cal-cell.planning { cursor: copy; }
+.cal-cell.planning:hover { background: var(--accent-soft); }
+.cal-cell.planned { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal-cell.other { opacity: .4; }
+.cal-cell.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cal-cell .dnum { font-size: 12.5px; font-weight: 700; color: var(--text-dim); }
+.cal-cell.today .dnum { color: var(--accent); }
+.dose-chip {
+  font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 5px;
+  background: var(--accent-soft); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 4px;
+}
+.dose-chip.done { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.dose-chip.done .lbl { text-decoration: line-through; opacity: .85; }
+.dose-chip .ck { font-size: 10px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; font-size: 12.5px; color: var(--text-dim); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* day detail list */
+.day-dose { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-soft); }
+.day-dose:last-child { border-bottom: none; }
+.day-dose .info { flex: 1; }
+.day-dose .info .t { font-weight: 600; }
+.day-dose .info .s { font-size: 12.5px; color: var(--text-dim); }
+.check {
+  width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid var(--border);
+  display: grid; place-items: center; background: var(--bg-input); color: transparent; flex-shrink: 0;
+}
+.check.on { background: var(--good); border-color: var(--good); color: var(--accent-text); }
+
+/* theme picker */
+.theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.theme-opt {
+  border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 12px; cursor: pointer; text-align: left;
+  background: var(--bg-card); transition: border-color .15s;
+}
+.theme-opt.active { border-color: var(--accent); }
+.theme-opt .swatches { display: flex; gap: 5px; margin-bottom: 8px; }
+.theme-opt .sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(255,255,255,.1); }
+.theme-opt .name { font-weight: 700; font-size: 14px; }
+
+.inline-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.muted { color: var(--text-dim); }
+.tiny { font-size: 12px; }
+hr.sep { border: none; border-top: 1px solid var(--border-soft); margin: 16px 0; }
+.warnbox { background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); color: var(--warn); padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 12px; }
+.sec-h { font-size: 12.5px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
+.calc-out { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-top: 6px; }
+.calc-out .big { font-size: 22px; font-weight: 700; color: var(--accent); }
+@media (max-width: 640px){
+  .cal-cell { min-height: 64px; }
+  nav.tabs button { padding: 7px 10px; font-size: 13px; }
+  .brand span { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span><span>Peptide Tracker</span></div>
+  <nav class="tabs" id="tabs">
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="calendar">Calendar</button>
+    <button data-view="peptides">Peptides</button>
+    <button data-view="vials">Vials</button>
+    <button data-view="sites">Sites</button>
+    <button data-view="progress">Progress</button>
+    <button data-view="finances">Finances</button>
+  </nav>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Overview of your active vials, schedule, and inventory.</p>
+    <div id="dueToday"></div>
+    <div class="grid cols-3" id="statCards"></div>
+    <div id="expiryAlerts"></div>
+    <div id="reorderAlerts"></div>
+    <div id="forecastCard"></div>
+    <div id="adherenceCard"></div>
+    <h3 style="margin:26px 0 12px;">Today &amp; Upcoming</h3>
+    <div class="card" id="upcoming"></div>
+    <h3 id="levelsHead" style="margin:26px 0 12px;display:none;">Estimated active levels</h3>
+    <div class="grid cols-2" id="levelCards"></div>
+    <h3 style="margin:26px 0 12px;">Active Vials</h3>
+    <div class="grid cols-2" id="dashVials"></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="view-calendar">
+    <h1 class="page-title">Calendar</h1>
+    <p class="page-sub">Click a day to add or check off doses. Or hit <b>+ Add dose</b> to plan ahead — pick a dose, then click dates to stamp it. Set recurring schedules under Peptides.</p>
+    <div class="cal-head">
+      <button class="icon-btn" id="calPrev" title="Previous">‹</button>
+      <h2 id="calLabel"></h2>
+      <button class="icon-btn" id="calNext" title="Next">›</button>
+      <button class="btn ghost sm" id="calToday">Today</button>
+      <div class="spacer"></div>
+      <button class="btn sm" id="calAddDose">+ Add dose</button>
+    </div>
+    <div id="planBanner"></div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calGrid" style="margin-top:6px;"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--accent)"></span> Planned</span>
+      <span><span class="swatch" style="background:var(--good)"></span> Taken</span>
+      <span class="muted">Schedules auto-fill; click a day for one-off doses.</span>
+    </div>
+    <div id="calFinance"></div>
+  </section>
+
+  <!-- PEPTIDES -->
+  <section class="view" id="view-peptides">
+    <h1 class="page-title">Peptides</h1>
+    <p class="page-sub">Your library of peptides and their recurring dosing schedules.</p>
+    <button class="btn" id="addPeptideBtn">+ Add Peptide</button>
+    <div class="grid cols-2" id="peptideList" style="margin-top:18px;"></div>
+  </section>
+
+  <!-- VIALS -->
+  <section class="view" id="view-vials">
+    <h1 class="page-title">Vials</h1>
+    <p class="page-sub">Track reconstitution, stability, remaining amount, and dosing math per vial.</p>
+    <div class="inline-actions" style="margin-bottom:18px;">
+      <button class="btn" id="addVialBtn">+ Add Vial</button>
+      <button class="btn ghost" id="toggleArchived">Show archived</button>
+    </div>
+    <div class="grid cols-2" id="vialList"></div>
+  </section>
+
+  <!-- SITES -->
+  <section class="view" id="view-sites">
+    <h1 class="page-title">Injection Sites</h1>
+    <p class="page-sub">Rotation status by site. Green = rested, red = used within your rest window. Sites are recorded when you log a dose.</p>
+    <div id="siteView"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="view" id="view-progress">
+    <h1 class="page-title">Progress</h1>
+    <p class="page-sub">Track bodyweight over time alongside your protocol.</p>
+    <div class="inline-actions" style="margin-bottom:18px;">
+      <button class="btn" id="addWeightBtn">+ Log weight</button>
+    </div>
+    <div class="grid cols-3" id="weightStats" style="margin-bottom:18px;"></div>
+    <div class="card" style="margin-bottom:18px;"><div id="weightChart"></div></div>
+    <div class="card"><div id="weightTable"></div></div>
+  </section>
+
+  <!-- FINANCES -->
+  <section class="view" id="view-finances">
+    <h1 class="page-title">Finances</h1>
+    <p class="page-sub">Money spent on vials and anything sold, with running totals.</p>
+    <div class="grid cols-3" id="finStats" style="margin-bottom:22px;"></div>
+
+    <h3 style="margin:6px 0 4px;">Spend over time</h3>
+    <p class="page-sub" style="margin-bottom:14px;">Based on the cost of doses you've logged (uses each peptide's cost per vial).</p>
+    <div class="grid cols-3" id="spendStats" style="margin-bottom:18px;"></div>
+    <div class="card" style="margin-bottom:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="sec-h" style="margin:0;">Breakdown</div>
+        <select id="spendGran" style="max-width:150px;">
+          <option value="week">Weekly</option>
+          <option value="month" selected>Monthly</option>
+          <option value="quarter">Quarterly</option>
+          <option value="year">Yearly</option>
+        </select>
+      </div>
+      <div id="spendBreakdown"></div>
+    </div>
+
+    <h3 style="margin:6px 0 12px;">By vial</h3>
+    <div class="card"><div id="finTable"></div></div>
+  </section>
+</main>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- settings modal -->
+<div class="modal-bg" id="settingsBg">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="field"><label>Theme</label>
+      <div class="theme-grid" id="themeGrid"></div>
+    </div>
+    <hr class="sep">
+    <div class="field"><label>Default vial stability (days)</label>
+      <input type="number" id="setStability" min="1" step="1">
+    </div>
+    <div class="field"><label>Syringe size (units per mL)</label>
+      <input type="number" id="setUnitsPerMl" min="1" step="1">
+      <div class="tiny muted" style="margin-top:5px;">Standard insulin syringe = 100 units per 1 mL. U-50 = 50.</div>
+    </div>
+    <div class="field"><label>Currency symbol</label>
+      <input type="text" id="setCurrency" maxlength="3" style="max-width:90px;">
+    </div>
+    <div class="field"><label>Weight unit</label>
+      <select id="setWeightUnit" style="max-width:120px;"><option value="lb">lb</option><option value="kg">kg</option></select>
+    </div>
+    <div class="field"><label>Injection-site rest period (days)</label>
+      <input type="number" id="setRestDays" min="0" step="1" style="max-width:120px;">
+      <div class="tiny muted" style="margin-top:5px;">Warn when reusing a site sooner than this.</div>
+    </div>
+    <div class="field"><label>Dose reminders</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer;">
+        <input type="checkbox" id="setNotify" style="width:auto;"> Show a browser notification when doses are due today
+      </label>
+      <div class="tiny muted" style="margin-top:5px;">Requires notification permission; fires when you open the app with doses due.</div>
+    </div>
+    <hr class="sep">
+    <label style="font-size:12.5px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.03em;">Data</label>
+    <div class="inline-actions" style="margin-top:8px;">
+      <button class="btn ghost sm" id="exportBtn">Export backup</button>
+      <button class="btn ghost sm" id="importBtn">Import backup</button>
+      <button class="btn danger sm" id="wipeBtn">Erase all data</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
+    <div class="modal-actions">
+      <button class="btn" id="settingsClose">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   STATE
+========================================================= */
+const KEY = "peptideTracker.v1";
+const DEFAULT_STATE = {
+  peptides: [],      // {id,name,color,notes,defaultDoseMcg, schedules:[...]}
+  vials: [],         // {id,peptideId,label,mgContent,bacWaterMl,dateMixed,stabilityDays,pricePaid,priceSold,archived, doses:[{date,mcg,id}]}
+  manualEvents: [],  // {id,date,peptideId,doseMcg}
+  completions: {},   // key `${scheduleId}|${date}` or `manual|${eventId}` -> {vialId, mcg, takenDate}
+  weights: [],       // {id,date,weight,note}
+  settings: { theme:"midnight", defaultStability:28, unitsPerMl:100, currency:"$", siteRestDays:4, notifications:false, weightUnit:"lb" }
+};
+const COLORS = ["#5b8cff","#3ecf8e","#f2b34b","#f2685c","#b07cff","#4fd1d9","#ff8fab","#9ad14b"];
+// injection sites by route
+const SITES = {
+  SubQ: ["Abdomen L","Abdomen R","Love handle L","Love handle R","Front thigh L","Front thigh R","Back of arm L","Back of arm R"],
+  IM:   ["Deltoid L","Deltoid R","Ventroglute L","Ventroglute R","Vastus (thigh) L","Vastus (thigh) R","Dorsogluteal L","Dorsogluteal R"]
+};
+// body-map marker positions, viewBox 140x300 per figure. view: front|back
+const SITE_COORDS = {
+  "Deltoid L":{view:"front",x:39,y:70}, "Deltoid R":{view:"front",x:101,y:70},
+  "Love handle L":{view:"front",x:51,y:128}, "Love handle R":{view:"front",x:89,y:128},
+  "Abdomen L":{view:"front",x:63,y:132}, "Abdomen R":{view:"front",x:77,y:132},
+  "Front thigh L":{view:"front",x:60,y:200}, "Front thigh R":{view:"front",x:80,y:200},
+  "Vastus (thigh) L":{view:"front",x:50,y:222}, "Vastus (thigh) R":{view:"front",x:90,y:222},
+  "Back of arm L":{view:"back",x:37,y:96}, "Back of arm R":{view:"back",x:103,y:96},
+  "Ventroglute L":{view:"back",x:52,y:166}, "Ventroglute R":{view:"back",x:88,y:166},
+  "Dorsogluteal L":{view:"back",x:61,y:176}, "Dorsogluteal R":{view:"back",x:79,y:176}
+};
+// stylized humanoid silhouette (front & back share shape), viewBox 140x300
+const BODY_SILHOUETTE = `
+  <circle cx="70" cy="26" r="17"/>
+  <rect x="64" y="41" width="12" height="10"/>
+  <path d="M48,50 L92,50 Q96,52 95,60 L88,150 L52,150 L45,60 Q44,52 48,50 Z"/>
+  <path d="M47,54 L31,140 Q30,146 35,147 L41,147 L54,62 Z"/>
+  <path d="M93,54 L109,140 Q110,146 105,147 L99,147 L86,62 Z"/>
+  <path d="M52,150 L88,150 L86,172 L54,172 Z"/>
+  <path d="M55,170 L52,288 Q52,292 60,292 L67,292 Q69,292 69,170 Z"/>
+  <path d="M85,170 L88,288 Q88,292 80,292 L73,292 Q71,292 71,170 Z"/>`;
+// common peptides for the quick-pick dropdown, grouped by use. Second value = approx
+// half-life in hours (rough public references; user can edit). Blank = not well-established.
+const COMMON_PEPTIDES = [
+  ["Healing & recovery", [["BPC-157",4],["TB-500 (Thymosin β4)"],["BPC-157 / TB-500 blend"],["KPV"],["GHK-Cu",1],["ARA-290 (Cibinetide)"],["Pentosan Polysulfate"],["VIP"]]],
+  ["Growth hormone (GHRH / GHRP)", [["Ipamorelin",2],["CJC-1295 (no DAC)",0.5],["CJC-1295 (with DAC)",144],["Sermorelin",0.3],["Tesamorelin",0.5],["GHRP-2",0.5],["GHRP-6",0.5],["Hexarelin",0.5],["MK-677 (Ibutamoren)",24],["Ipamorelin / CJC-1295 blend"]]],
+  ["Metabolic / weight loss", [["Semaglutide",168],["Tirzepatide",120],["Retatrutide",150],["Liraglutide",13],["Cagrilintide",168],["Survodutide"],["AOD-9604"],["MOTS-c",2],["5-Amino-1MQ"],["Tesofensine"]]],
+  ["Muscle / IGF", [["IGF-1 LR3",20],["IGF-1 DES"],["PEG-MGF"],["MGF"],["Follistatin 344"]]],
+  ["Cognitive / nootropic", [["Semax"],["Selank"],["Dihexa"],["Cerebrolysin"],["P21 (P021)"]]],
+  ["Longevity / mitochondrial", [["Epitalon (Epithalon)"],["SS-31 (Elamipretide)"],["Humanin"],["Thymulin"]]],
+  ["Immune", [["Thymosin Alpha-1",2],["Thymalin"],["LL-37"]]],
+  ["Sexual / hormonal", [["PT-141 (Bremelanotide)",2.7],["Kisspeptin-10"],["Gonadorelin",0.3],["Oxytocin"]]],
+  ["Tanning", [["Melanotan I"],["Melanotan II",1]]],
+  ["Sleep", [["DSIP"]]],
+  ["Cosmetic (topical)", [["SNAP-8"],["Argireline (Acetyl Hexapeptide-8)"]]]
+];
+const PEPTIDE_HL = Object.fromEntries(COMMON_PEPTIDES.flatMap(([,items])=>items.filter(it=>it[1]!=null).map(it=>[it[0],it[1]])));
+const ALL_PEPTIDE_NAMES = COMMON_PEPTIDES.flatMap(([,items])=>items.map(it=>it[0]));
+
+let state = load();
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return structuredClone(DEFAULT_STATE);
+    const s = JSON.parse(raw);
+    return Object.assign(structuredClone(DEFAULT_STATE), s,
+      { settings: Object.assign({}, DEFAULT_STATE.settings, s.settings||{}) });
+  } catch(e){ return structuredClone(DEFAULT_STATE); }
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+const uid = () => Math.random().toString(36).slice(2,10);
+
+/* =========================================================
+   HELPERS
+========================================================= */
+const $ = (s,el=document) => el.querySelector(s);
+const $$ = (s,el=document) => [...el.querySelectorAll(s)];
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayISO = () => toISO(new Date());
+function toISO(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function fromISO(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function daysBetween(a,b){ return Math.round((fromISO(b)-fromISO(a))/86400000); }
+const cur = () => state.settings.currency || "$";
+const money = n => cur()+ (Number(n)||0).toFixed(2);
+const fmtNum = (n,d=2) => { const v=Number(n); return (Math.round(v*10**d)/10**d).toString(); };
+function peptide(id){ return state.peptides.find(p=>p.id===id); }
+function vial(id){ return state.vials.find(v=>v.id===id); }
+
+/* ---- vial math ---- */
+function vialStats(v){
+  const concentration = v.bacWaterMl>0 ? v.mgContent / v.bacWaterMl : 0; // mg per mL
+  const totalMcg = v.mgContent * 1000;
+  const usedMcg = (v.doses||[]).reduce((a,d)=>a+(Number(d.mcg)||0),0);
+  const remainMcg = Math.max(0, totalMcg - usedMcg);
+  const remainMl = concentration>0 ? (remainMcg/1000)/concentration : 0;
+  const expiry = v.dateMixed ? toISO(new Date(fromISO(v.dateMixed).getTime()+ v.stabilityDays*86400000)) : null;
+  const daysLeft = expiry ? daysBetween(todayISO(), expiry) : null;
+  return { concentration, totalMcg, usedMcg, remainMcg, remainMl, expiry, daysLeft,
+           pctLeft: totalMcg>0 ? remainMcg/totalMcg*100 : 0 };
+}
+// dose mcg -> {ml, units}
+function doseDraw(v, mcg){
+  const c = v.bacWaterMl>0 ? v.mgContent/v.bacWaterMl : 0; // mg/mL
+  const ml = c>0 ? (mcg/1000)/c : 0;
+  const units = ml * (state.settings.unitsPerMl||100);
+  return { ml, units };
+}
+/* ---- dose units (canonical storage is always mcg; display per-peptide) ---- */
+function peptideUnit(p){ return (p && p.doseUnit==="mg") ? "mg" : "mcg"; }
+function toDisplayDose(mcg, p){ const v=+mcg; if(!isFinite(v)) return ""; return peptideUnit(p)==="mg" ? v/1000 : v; }
+function fromDisplayDose(val, p){ const v=+val||0; return peptideUnit(p)==="mg" ? v*1000 : v; }
+function fmtDose(mcg, p){ const v=+mcg; if(!isFinite(v)) return "—"; return peptideUnit(p)==="mg" ? `${fmtNum(v/1000,3)} mg` : `${fmtNum(v)} mcg`; }
+// common peptides that are conventionally dosed in mg (used to preset the unit toggle)
+const MG_DOSED = new Set(["Semaglutide","Tirzepatide","Retatrutide","Liraglutide","Cagrilintide","Survodutide","MK-677 (Ibutamoren)","Tesofensine","5-Amino-1MQ"]);
+// cost per dose for one vial at a given dose (mcg). null if not computable.
+function vialCostPerDose(v, doseMcg){
+  const paid = +v.pricePaid||0;
+  if(paid<=0 || !(doseMcg>0)) return null;
+  const totalMcg = v.mgContent*1000;
+  const dosesPerVial = totalMcg/doseMcg;
+  return dosesPerVial>0 ? paid/dosesPerVial : null;
+}
+// cost per mcg for a peptide. Prefers peptide.costPerVial (+ vialMg); falls back to
+// the blended price across its priced vials. Returns 0 if no cost info.
+function peptideCostPerMcg(p){
+  if(!p) return 0;
+  const cpv=+p.costPerVial||0, totalMcg=(+p.vialMg||0)*1000;
+  if(cpv>0 && totalMcg>0) return cpv/totalMcg;
+  let cost=0, mcg=0;
+  state.vials.filter(v=>v.peptideId===p.id && (+v.pricePaid||0)>0).forEach(v=>{ cost+=+v.pricePaid||0; mcg+=v.mgContent*1000; });
+  return mcg>0 ? cost/mcg : 0;
+}
+// blended cost per dose at the peptide's default dose. null if N/A.
+function peptideCostPerDose(p){
+  const dose=+p.defaultDoseMcg||0; if(!(dose>0)) return null;
+  const cpm=peptideCostPerMcg(p); return cpm>0 ? cpm*dose : null;
+}
+// cost of a given dose (mcg) for a peptide, using best available cost info.
+function doseCost(mcg, p){ const cpm=peptideCostPerMcg(p); return cpm>0 ? (+mcg||0)*cpm : 0; }
+
+/* ---- spend over time (based on logged doses) ---- */
+function weekStartISO(dISO){ const d=fromISO(dISO); return toISO(new Date(d.getTime()-d.getDay()*86400000)); } // Sunday-start
+function periodKey(dISO, g){
+  const d=fromISO(dISO), y=d.getFullYear();
+  if(g==="year")    return { key:`${y}`, label:`${y}` };
+  if(g==="quarter"){ const q=Math.floor(d.getMonth()/3)+1; return { key:`${y}-Q${q}`, label:`Q${q} ${y}` }; }
+  if(g==="month")   return { key:`${y}-${String(d.getMonth()+1).padStart(2,"0")}`, label:d.toLocaleDateString(undefined,{month:"long",year:"numeric"}) };
+  const ws=weekStartISO(dISO), wd=fromISO(ws), we=new Date(wd.getTime()+6*86400000);  // week
+  return { key:ws, label:`${wd.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${we.toLocaleDateString(undefined,{month:"short",day:"numeric"})}` };
+}
+function spendByPeriod(g){
+  const map={};
+  allDoses().forEach(d=>{ const c=doseCost(d.mcg, peptide(d.peptideId)); if(c<=0) return;
+    const {key,label}=periodKey(d.date,g); (map[key]||(map[key]={key,label,total:0})).total+=c;
+  });
+  return Object.values(map).sort((a,b)=> b.key.localeCompare(a.key)); // newest first
+}
+function currentSpendTotals(){
+  const today=todayISO();
+  const k={ week:periodKey(today,"week").key, month:periodKey(today,"month").key, quarter:periodKey(today,"quarter").key, year:periodKey(today,"year").key };
+  const t={ week:0, month:0, quarter:0, year:0, all:0 };
+  allDoses().forEach(d=>{ const c=doseCost(d.mcg, peptide(d.peptideId)); if(c<=0) return; t.all+=c;
+    if(periodKey(d.date,"week").key===k.week) t.week+=c;
+    if(periodKey(d.date,"month").key===k.month) t.month+=c;
+    if(periodKey(d.date,"quarter").key===k.quarter) t.quarter+=c;
+    if(periodKey(d.date,"year").key===k.year) t.year+=c;
+  });
+  return t;
+}
+
+/* ---- injection sites ---- */
+// flat list of all logged doses, newest first
+function allDoses(){
+  const arr=[];
+  state.vials.forEach(v=> (v.doses||[]).forEach(d=> arr.push(Object.assign({vialId:v.id, peptideId:v.peptideId}, d))));
+  return arr.sort((a,b)=> (b.date||"").localeCompare(a.date||"") || (b.id||"").localeCompare(a.id||""));
+}
+function siteStatus(site){
+  let lastISO=null;
+  state.vials.forEach(v=> (v.doses||[]).forEach(d=>{
+    if(d.site===site && d.date && (!lastISO || d.date>lastISO)) lastISO=d.date;
+  }));
+  const rest=state.settings.siteRestDays||4;
+  const daysSince = lastISO ? daysBetween(lastISO, todayISO()) : null;
+  return { lastISO, daysSince, rested: daysSince===null || daysSince>=rest };
+}
+
+/* ---- half-life / active level ---- */
+function doseTime(d){ return fromISO(d.date).getTime() + 12*3600000; } // assume taken ~noon
+// estimated mcg of a peptide currently in system, plus last dose time
+function peptideLevel(p){
+  const hl=+p.halfLifeHours||0; if(!(hl>0)) return null;
+  const now=Date.now(); let total=0, lastT=null;
+  state.vials.filter(v=>v.peptideId===p.id).forEach(v=> (v.doses||[]).forEach(d=>{
+    const t=doseTime(d); if(t>now+12*3600000) return;
+    const hrs=Math.max(0,(now-t)/3600000);
+    if(hrs/hl>8) return; // negligible after 8 half-lives
+    total += (+d.mcg||0)*Math.pow(0.5, hrs/hl);
+    if(lastT===null || t>lastT) lastT=t;
+  }));
+  return { level: total, lastT, hl };
+}
+function decaySparkline(level, hl, color){
+  if(!(level>0)||!(hl>0)) return "";
+  const W=140,H=34,span=hl*4,n=26,pts=[];
+  for(let i=0;i<=n;i++){ const t=span*i/n; const y=level*Math.pow(0.5,t/hl); pts.push([(i/n*W), H-(y/level)*(H-4)-2]); }
+  const dd=pts.map((pt,i)=>(i?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1)).join(' ');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin-top:6px;opacity:.9;"><path d="${dd}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+function fmtAgo(ms){
+  const h=(Date.now()-ms)/3600000;
+  if(h<0) return "upcoming";
+  if(h<1) return Math.round(h*60)+"m ago";
+  if(h<48) return Math.round(h)+"h ago";
+  return Math.round(h/24)+"d ago";
+}
+
+/* ---- supply forecast ---- */
+function addDaysISO(n){ return toISO(new Date(Date.now()+n*86400000)); }
+function peptideForecast(p){
+  const dose=+p.defaultDoseMcg||0; if(!(dose>0)) return null;
+  const active=state.vials.filter(v=>v.peptideId===p.id && !v.archived);
+  let remMcg=0; active.forEach(v=> remMcg+=vialStats(v).remainMcg);
+  const reserveMcg=(p.stock||0)*((+p.vialMg||0)*1000);
+  const dosesRem=remMcg/dose, dosesReserve=reserveMcg/dose;
+  // dosing frequency from schedules over next 28 days
+  let fires=0;
+  for(let i=0;i<28;i++){ const iso=addDaysISO(i);
+    (p.schedules||[]).forEach(s=>{ if(scheduleFires(s,iso)) fires++; }); }
+  const perDay=fires/28;
+  if(perDay<=0) return { perDay:0, dosesRem, dosesReserve };
+  return { perDay, dosesRem, dosesReserve,
+    runOutMixed: addDaysISO(dosesRem/perDay),
+    runOutTotal: addDaysISO((dosesRem+dosesReserve)/perDay),
+    daysMixed: Math.round(dosesRem/perDay), daysTotal: Math.round((dosesRem+dosesReserve)/perDay) };
+}
+
+/* ---- adherence (taken vs scheduled) ---- */
+function adherence(days=30){
+  const perP={}; let scheduled=0, taken=0;
+  for(let i=0;i<days;i++){ const iso=addDaysISO(-i);
+    state.peptides.forEach(p=>(p.schedules||[]).forEach(s=>{
+      if(scheduleFires(s,iso)){
+        const done=!!state.completions[`${s.id}|${iso}`];
+        scheduled++; if(done) taken++;
+        const e=perP[p.id]||(perP[p.id]={p,scheduled:0,taken:0});
+        e.scheduled++; if(done) e.taken++;
+      }
+    }));
+  }
+  return { scheduled, taken, pct: scheduled? taken/scheduled*100 : null,
+    perPeptide: Object.values(perP).map(o=>({...o, pct:o.scheduled?o.taken/o.scheduled*100:null})) };
+}
+
+/* ---- due-today / notifications ---- */
+function dueTodayDoses(){ return dosesForDate(todayISO()).filter(x=>!x.done); }
+function maybeNotify(){
+  if(!state.settings.notifications) return;
+  if(!("Notification" in window) || Notification.permission!=="granted") return;
+  const due=dueTodayDoses(); if(!due.length) return;
+  const names=[...new Set(due.map(x=>peptide(x.peptideId)?.name).filter(Boolean))].join(", ");
+  try{ new Notification("Peptide Tracker", { body:`${due.length} dose${due.length!==1?"s":""} due today: ${names}` }); }catch(e){}
+}
+
+/* =========================================================
+   NAV
+========================================================= */
+$$("#tabs button").forEach(b=> b.onclick = ()=> showView(b.dataset.view));
+function showView(name){
+  $$("#tabs button").forEach(b=> b.classList.toggle("active", b.dataset.view===name));
+  $$(".view").forEach(v=> v.classList.toggle("active", v.id==="view-"+name));
+  renderAll();
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+const modalBg = $("#modalBg"), modalEl = $("#modal");
+function openModal(html){ modalEl.innerHTML = html; modalBg.classList.add("open"); }
+function closeModal(){ modalBg.classList.remove("open"); modalEl.innerHTML=""; }
+modalBg.onclick = e => { if(e.target===modalBg) closeModal(); };
+document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closeModal(); $("#settingsBg").classList.remove("open"); }});
+
+/* =========================================================
+   PEPTIDES
+========================================================= */
+$("#addPeptideBtn").onclick = ()=> peptideForm();
+function peptideForm(p){
+  const isNew = !p;
+  p = p || { id:uid(), name:"", color:COLORS[state.peptides.length%COLORS.length], notes:"", defaultDoseMcg:"", doseUnit:"mcg", vialMg:"", stock:0, reorderAt:1, halfLifeHours:"", costPerVial:"", schedules:[], presets:[] };
+  const doseDisp = (p.defaultDoseMcg!=="" && p.defaultDoseMcg!=null) ? toDisplayDose(p.defaultDoseMcg, p) : "";
+  openModal(`
+    <h2>${isNew?"Add":"Edit"} Peptide</h2>
+    <div class="field"><label>Quick pick (optional)</label>
+      <select id="pPick">
+        <option value="">— choose a common peptide —</option>
+        ${COMMON_PEPTIDES.map(([g,items])=>`<optgroup label="${esc(g)}">${items.map(it=>`<option value="${esc(it[0])}">${esc(it[0])}</option>`).join("")}</optgroup>`).join("")}
+      </select>
+      <div class="tiny muted" style="margin-top:5px;">Fills the name below (and half-life if known). Edit it freely afterward.</div>
+    </div>
+    <div class="field"><label>Name</label><input id="pName" value="${esc(p.name)}" placeholder="e.g. BPC-157" list="pNameList">
+      <datalist id="pNameList">${ALL_PEPTIDE_NAMES.map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>
+    <div class="row">
+      <div class="field"><label>Default dose</label>
+        <div style="display:flex;gap:6px;">
+          <input id="pDose" type="number" min="0" step="any" value="${esc(doseDisp)}" placeholder="250" style="flex:1;">
+          <select id="pDoseUnit" style="width:74px;"><option value="mcg">mcg</option><option value="mg">mg</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Vial size (mg)</label><input id="pVialMg" type="number" min="0" step="any" value="${esc(p.vialMg||'')}" placeholder="5"></div>
+      <div class="field"><label>Color</label><input id="pColor" type="color" value="${p.color}" style="height:40px;padding:4px;"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Stock (dry vials on hand)</label><input id="pStock" type="number" min="0" step="1" value="${esc(p.stock??0)}" placeholder="0"></div>
+      <div class="field"><label>Remind me to reorder at</label><input id="pReorder" type="number" min="0" step="1" value="${esc(p.reorderAt??1)}"></div>
+      <div class="field"><label>Half-life (hours)</label><input id="pHalfLife" type="number" min="0" step="any" value="${esc(p.halfLifeHours||'')}" placeholder="e.g. 4"></div>
+    </div>
+    <div class="field"><label>Cost per vial (${esc(cur())})</label>
+      <input id="pCost" type="number" min="0" step="any" value="${esc(p.costPerVial||'')}" placeholder="0" style="max-width:200px;">
+      <div class="tiny muted" style="margin-top:5px;">Pre-fills the price on new vials and drives cost/dose + calendar spend estimates.</div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="pNotes" placeholder="Source, batch, etc.">${esc(p.notes)}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="pSave">Save</button>
+    </div>`);
+  const unitSel=$("#pDoseUnit"); unitSel.value=p.doseUnit||"mcg";
+  let prevUnit=unitSel.value;
+  unitSel.onchange=()=>{               // keep the same real dose, convert the shown number
+    const cur=+$("#pDose").value;
+    if(isFinite(cur) && $("#pDose").value!==""){
+      if(prevUnit==="mcg" && unitSel.value==="mg") $("#pDose").value=fmtNum(cur/1000,4);
+      else if(prevUnit==="mg" && unitSel.value==="mcg") $("#pDose").value=fmtNum(cur*1000,4);
+    }
+    prevUnit=unitSel.value;
+  };
+  $("#pPick").onchange = ()=>{
+    const v=$("#pPick").value; if(!v) return;
+    $("#pName").value=v;
+    if(PEPTIDE_HL[v]!=null && !$("#pHalfLife").value) $("#pHalfLife").value=PEPTIDE_HL[v];
+    if(MG_DOSED.has(v) && !$("#pDose").value){ unitSel.value="mg"; prevUnit="mg"; }   // GLP-1s etc. dosed in mg
+    $("#pPick").value="";          // reset to a one-shot picker
+    $("#pName").focus();
+  };
+  $("#pSave").onclick = ()=>{
+    const name = $("#pName").value.trim();
+    if(!name){ $("#pName").focus(); return; }
+    p.name = name;
+    p.doseUnit = unitSel.value;
+    const rawDose = $("#pDose").value;
+    p.defaultDoseMcg = rawDose==="" ? "" : fromDisplayDose(rawDose, p);
+    p.vialMg = $("#pVialMg").value;
+    p.stock = Math.max(0, Math.floor(+$("#pStock").value||0));
+    p.reorderAt = Math.max(0, Math.floor(+$("#pReorder").value||0));
+    p.halfLifeHours = $("#pHalfLife").value;
+    p.costPerVial = $("#pCost").value;
+    p.color = $("#pColor").value;
+    p.notes = $("#pNotes").value.trim();
+    if(isNew){ p.schedules=[]; p.presets=[]; state.peptides.push(p); }
+    save(); closeModal(); renderAll();
+  };
+}
+function deletePeptide(id){
+  const hasVials = state.vials.some(v=>v.peptideId===id);
+  const msg = hasVials ? "This peptide has vials linked to it. Delete the peptide anyway? (Vials will remain but show as unlinked.)" : "Delete this peptide and its schedules?";
+  if(!confirm(msg)) return;
+  state.peptides = state.peptides.filter(p=>p.id!==id);
+  save(); renderAll();
+}
+
+/* ---- stock + reconstitution presets ---- */
+function restock(pid){
+  const p=peptide(pid);
+  const n=prompt(`Add how many dry vials to ${p.name} stock?  (current: ${p.stock||0})`, "1");
+  if(n===null) return;
+  const add=Math.floor(+n); if(!isFinite(add)) return;
+  p.stock=Math.max(0,(p.stock||0)+add); save(); renderAll();
+}
+function presetLabel(pr){ return (pr.name? pr.name+" · ":"") + `${pr.mgContent||"?"}mg / ${pr.bacWaterMl||"?"}mL`; }
+function presetForm(peptideId, pr){
+  const p=peptide(peptideId); const isNew=!pr;
+  pr = pr || { id:uid(), name:"", mgContent:p.vialMg||"", bacWaterMl:"" };
+  openModal(`
+    <h2>${isNew?"New":"Edit"} Reconstitution Preset · ${esc(p.name)}</h2>
+    <div class="field"><label>Preset name (optional)</label><input id="prName" value="${esc(pr.name)}" placeholder="e.g. Standard 2 mL"></div>
+    <div class="row">
+      <div class="field"><label>Peptide content (mg)</label><input id="prMg" type="number" min="0" step="any" value="${esc(pr.mgContent)}" placeholder="${esc(p.vialMg||'5')}"></div>
+      <div class="field"><label>Bac water (mL)</label><input id="prMl" type="number" min="0" step="any" value="${esc(pr.bacWaterMl)}" placeholder="2"></div>
+    </div>
+    <div id="prPrev" class="tiny muted"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="prSave">Save</button>
+    </div>`);
+  function prev(){ const mg=+$("#prMg").value, ml=+$("#prMl").value;
+    $("#prPrev").innerHTML = (mg>0&&ml>0)?`Concentration <b>${fmtNum(mg/ml*1000)} mcg/mL</b> · total <b>${fmtNum(mg*1000)} mcg</b>`:""; }
+  $("#prMg").oninput=prev; $("#prMl").oninput=prev; prev();
+  $("#prSave").onclick=()=>{
+    pr.name=$("#prName").value.trim(); pr.mgContent=$("#prMg").value; pr.bacWaterMl=$("#prMl").value;
+    if(isNew){ p.presets=p.presets||[]; p.presets.push(pr); }
+    save(); closeModal(); renderAll();
+  };
+}
+function deletePreset(pid, prid){ const p=peptide(pid); p.presets=(p.presets||[]).filter(x=>x.id!==prid); save(); renderAll(); }
+
+/* ---- schedules ---- */
+function scheduleForm(peptideId, sch){
+  const p = peptide(peptideId);
+  const isNew = !sch;
+  sch = sch || { id:uid(), type:"daily", doseMcg:p.defaultDoseMcg||"", weekdays:[1,3,5], onDays:5, offDays:2, startDate:todayISO(), endDate:"" };
+  const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  openModal(`
+    <h2>${isNew?"New":"Edit"} Schedule · ${esc(p.name)}</h2>
+    <div class="field"><label>Frequency</label>
+      <select id="sType">
+        <option value="daily">Every day</option>
+        <option value="weekdays">Specific weekdays</option>
+        <option value="cycle">Cycle (X days on / Y off)</option>
+        <option value="everyN">Every N days</option>
+      </select>
+    </div>
+    <div class="field"><label>Dose (${peptideUnit(p)})</label><input id="sDose" type="number" min="0" step="any" value="${esc(sch.doseMcg===""?"":toDisplayDose(sch.doseMcg,p))}"></div>
+    <div id="sWeekdays" class="field" style="display:none;"><label>Days of week</label>
+      <div class="inline-actions">${dow.map((d,i)=>`<button type="button" class="btn ghost sm dowtog" data-d="${i}">${d}</button>`).join("")}</div>
+    </div>
+    <div id="sCycle" class="row" style="display:none;">
+      <div class="field"><label>Days ON</label><input id="sOn" type="number" min="1" value="${sch.onDays}"></div>
+      <div class="field"><label>Days OFF</label><input id="sOff" type="number" min="0" value="${sch.offDays}"></div>
+    </div>
+    <div id="sEveryN" class="field" style="display:none;"><label>Every N days</label><input id="sN" type="number" min="1" value="${sch.onDays||2}"></div>
+    <div class="row">
+      <div class="field"><label>Start date</label><input id="sStart" type="date" value="${sch.startDate}"></div>
+      <div class="field"><label>End date (optional)</label><input id="sEnd" type="date" value="${sch.endDate||""}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="sSave">Save</button>
+    </div>`);
+  const sel = $("#sType"); sel.value = sch.type;
+  let picked = new Set(sch.weekdays||[]);
+  function refresh(){
+    $("#sWeekdays").style.display = sel.value==="weekdays"?"block":"none";
+    $("#sCycle").style.display = sel.value==="cycle"?"flex":"none";
+    $("#sEveryN").style.display = sel.value==="everyN"?"block":"none";
+  }
+  sel.onchange = refresh; refresh();
+  $$(".dowtog").forEach(b=>{
+    if(picked.has(+b.dataset.d)){ b.style.background="var(--accent)"; b.style.color="var(--accent-text)"; }
+    b.onclick=()=>{ const d=+b.dataset.d;
+      if(picked.has(d)){ picked.delete(d); b.style.background=""; b.style.color=""; }
+      else { picked.add(d); b.style.background="var(--accent)"; b.style.color="var(--accent-text)"; }
+    };
+  });
+  $("#sSave").onclick=()=>{
+    sch.type = sel.value;
+    sch.doseMcg = $("#sDose").value===""?"":fromDisplayDose($("#sDose").value, p);
+    sch.weekdays = [...picked].sort();
+    sch.onDays = sel.value==="everyN" ? (+$("#sN").value||2) : (+$("#sOn")?.value||5);
+    sch.offDays = +$("#sOff")?.value||0;
+    sch.startDate = $("#sStart").value || todayISO();
+    sch.endDate = $("#sEnd").value || "";
+    if(isNew) p.schedules.push(sch);
+    save(); closeModal(); renderAll();
+  };
+}
+function deleteSchedule(pid, sid){
+  const p = peptide(pid); p.schedules = p.schedules.filter(s=>s.id!==sid); save(); renderAll();
+}
+function scheduleLabel(s){
+  const dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  if(s.type==="daily") return "Every day";
+  if(s.type==="weekdays") return (s.weekdays||[]).map(d=>dow[d]).join(", ")||"No days";
+  if(s.type==="cycle") return `${s.onDays} on / ${s.offDays} off`;
+  if(s.type==="everyN") return `Every ${s.onDays} days`;
+  return s.type;
+}
+// does a schedule fire on date d (ISO)?
+function scheduleFires(s, dISO){
+  if(dISO < s.startDate) return false;
+  if(s.endDate && dISO > s.endDate) return false;
+  const d = fromISO(dISO);
+  if(s.type==="daily") return true;
+  if(s.type==="weekdays") return (s.weekdays||[]).includes(d.getDay());
+  if(s.type==="everyN"){ const n=Math.max(1,s.onDays); return daysBetween(s.startDate,dISO)%n===0; }
+  if(s.type==="cycle"){
+    const period = Math.max(1,(s.onDays||0)+(s.offDays||0));
+    const pos = ((daysBetween(s.startDate,dISO))%period+period)%period;
+    return pos < (s.onDays||0);
+  }
+  return false;
+}
+
+/* =========================================================
+   VIALS
+========================================================= */
+let showArchived=false;
+$("#addVialBtn").onclick = ()=> vialForm();
+$("#toggleArchived").onclick = ()=>{ showArchived=!showArchived; $("#toggleArchived").textContent = showArchived?"Hide archived":"Show archived"; renderVials(); };
+function vialForm(v){
+  if(state.peptides.length===0){ alert("Add a peptide first."); showView("peptides"); return; }
+  const isNew=!v;
+  const firstP=state.peptides[0];
+  v = v || { id:uid(), peptideId:firstP.id, label:"", mgContent:firstP.vialMg||"", bacWaterMl:"", dateMixed:todayISO(),
+             stabilityDays:state.settings.defaultStability, pricePaid:(firstP.costPerVial||""), priceSold:"", archived:false, doses:[] };
+  openModal(`
+    <h2>${isNew?"Reconstitute / Add":"Edit"} Vial</h2>
+    <div class="field"><label>Peptide</label>
+      <select id="vPep">${state.peptides.map(p=>`<option value="${p.id}" ${p.id===v.peptideId?"selected":""}>${esc(p.name)}</option>`).join("")}</select>
+    </div>
+    <div class="field" id="vPresetWrap"><label>Reconstitution preset</label><select id="vPreset"></select></div>
+    <div class="field"><label>Label / batch (optional)</label><input id="vLabel" value="${esc(v.label)}" placeholder="e.g. Vial #2"></div>
+    <div class="row">
+      <div class="field"><label>Peptide content (mg)</label><input id="vMg" type="number" min="0" step="any" value="${esc(v.mgContent)}" placeholder="5"></div>
+      <div class="field"><label>Bac water added (mL)</label><input id="vMl" type="number" min="0" step="any" value="${esc(v.bacWaterMl)}" placeholder="2"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Date mixed</label><input id="vMixed" type="date" value="${v.dateMixed}"></div>
+      <div class="field"><label>Stable for (days)</label><input id="vStab" type="number" min="1" value="${v.stabilityDays}"></div>
+    </div>
+    ${isNew?`<div class="field"><label>Deduct from dry stock <span id="vStockHint" class="muted" style="text-transform:none;letter-spacing:0;font-weight:400;"></span></label><input id="vDeduct" type="number" min="0" step="1" value="1"></div>`:""}
+    <div class="row">
+      <div class="field"><label>Price paid (${esc(cur())})</label><input id="vPaid" type="number" min="0" step="any" value="${esc(v.pricePaid)}"></div>
+      <div class="field"><label>Sold for (optional)</label><input id="vSold" type="number" min="0" step="any" value="${esc(v.priceSold)}"></div>
+    </div>
+    <div id="vCalcPreview" class="tiny muted"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="vSave">${isNew?"Reconstitute":"Save"}</button>
+    </div>`);
+  function preview(){
+    const mg=+$("#vMg").value, ml=+$("#vMl").value;
+    if(mg>0&&ml>0){ const c=mg/ml; $("#vCalcPreview").innerHTML = `Concentration: <b>${fmtNum(c,3)} mg/mL</b> · <b>${fmtNum(c*1000)} mcg/mL</b> · total <b>${fmtNum(mg*1000)} mcg</b>`; }
+    else $("#vCalcPreview").textContent="";
+  }
+  function refreshPep(){
+    const p=peptide($("#vPep").value); const presets=p.presets||[];
+    const wrap=$("#vPresetWrap"), sel=$("#vPreset");
+    if(presets.length){ wrap.style.display="block";
+      sel.innerHTML=`<option value="">— choose preset —</option>`+presets.map(pr=>`<option value="${pr.id}">${esc(presetLabel(pr))}</option>`).join("");
+    } else { wrap.style.display="none"; sel.innerHTML=""; }
+    const hint=$("#vStockHint"); if(hint) hint.textContent=`(${p.stock||0} in stock)`;
+  }
+  $("#vPep").onchange=()=>{ refreshPep(); const p=peptide($("#vPep").value); if(p.vialMg) $("#vMg").value=p.vialMg; if(p.costPerVial && !$("#vPaid").value) $("#vPaid").value=p.costPerVial; preview(); };
+  $("#vPreset").onchange=()=>{ const p=peptide($("#vPep").value); const pr=(p.presets||[]).find(x=>x.id===$("#vPreset").value); if(pr){ $("#vMg").value=pr.mgContent; $("#vMl").value=pr.bacWaterMl; preview(); } };
+  refreshPep();
+  $("#vMg").oninput=preview; $("#vMl").oninput=preview; preview();
+  $("#vSave").onclick=()=>{
+    v.peptideId=$("#vPep").value; v.label=$("#vLabel").value.trim();
+    v.mgContent=+$("#vMg").value||0; v.bacWaterMl=+$("#vMl").value||0;
+    v.dateMixed=$("#vMixed").value; v.stabilityDays=+$("#vStab").value||28;
+    v.pricePaid=$("#vPaid").value; v.priceSold=$("#vSold").value;
+    if(isNew){
+      const deduct=Math.max(0, Math.floor(+($("#vDeduct")?.value)||0));
+      const p=peptide(v.peptideId);
+      if(deduct>0) p.stock=Math.max(0,(p.stock||0)-deduct);
+      v.stockUsed=deduct;
+      state.vials.push(v);
+    }
+    save(); closeModal(); renderAll();
+  };
+}
+function archiveVial(id){ const v=vial(id); v.archived=!v.archived; save(); renderAll(); }
+function deleteVial(id){ if(!confirm("Delete this vial and its dose history?")) return; state.vials=state.vials.filter(v=>v.id!==id); save(); renderAll(); }
+
+/* ---- shared dose detail fields (route / site / notes / rating) ---- */
+function doseFieldsHTML(d){
+  d=d||{};
+  return `
+    <div class="row">
+      <div class="field"><label>Route</label><select id="dfRoute"><option value="SubQ">SubQ</option><option value="IM">IM</option></select></div>
+      <div class="field"><label>Injection site</label><select id="dfSite"></select></div>
+    </div>
+    <div class="tiny" id="dfSiteHint" style="margin:-6px 0 10px;"></div>
+    <div class="field"><label>How you felt / side effects (optional)</label><textarea id="dfNotes" placeholder="e.g. mild flush, slept great, no sides">${esc(d.notes||"")}</textarea></div>
+    <div class="field"><label>Rating (optional)</label><select id="dfRating">
+      <option value="">—</option><option value="5">5 · Great</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Off</option><option value="1">1 · Bad</option>
+    </select></div>`;
+}
+function wireDoseFields(d){
+  d=d||{};
+  const routeSel=$("#dfRoute"), siteSel=$("#dfSite");
+  function fillSites(){
+    siteSel.innerHTML = `<option value="">— none —</option>`+ SITES[routeSel.value].map(s=>{
+      const st=siteStatus(s);
+      const tag = st.lastISO ? (st.rested?` · rested ${st.daysSince}d`:` · used ${st.daysSince}d ago`) : " · never used";
+      return `<option value="${esc(s)}">${esc(s)}${tag}</option>`;
+    }).join("");
+    hint();
+  }
+  function hint(){
+    const s=siteSel.value; const box=$("#dfSiteHint");
+    if(!s){ box.textContent=""; return; }
+    const st=siteStatus(s), rest=state.settings.siteRestDays||4;
+    if(!st.lastISO) box.innerHTML=`<span style="color:var(--good)">✓ Not used before.</span>`;
+    else if(st.rested) box.innerHTML=`<span style="color:var(--good)">✓ Last used ${st.daysSince}d ago — rested.</span>`;
+    else box.innerHTML=`<span style="color:var(--warn)">⚠ Used ${st.daysSince}d ago — under your ${rest}d rest. Consider another site.</span>`;
+  }
+  routeSel.value=d.route||"SubQ"; fillSites();
+  if(d.site){ siteSel.value=d.site; hint(); }
+  if(d.rating && $("#dfRating")) $("#dfRating").value=d.rating;
+  routeSel.onchange=fillSites; siteSel.onchange=hint;
+}
+function readDoseFields(){
+  return { route:$("#dfRoute")?.value||"", site:$("#dfSite")?.value||"",
+           notes:($("#dfNotes")?.value||"").trim(), rating:$("#dfRating")?.value||"" };
+}
+
+// log a manual dose against a vial (decrements)
+function logDoseForm(vialId){
+  const v=vial(vialId); const p=peptide(v.peptideId);
+  const def = p?.defaultDoseMcg ? toDisplayDose(p.defaultDoseMcg, p) : "";
+  openModal(`
+    <h2>Log Dose · ${esc(p?.name||"Vial")}</h2>
+    <div class="row">
+      <div class="field"><label>Dose (${peptideUnit(p)})</label><input id="ldMcg" type="number" min="0" step="any" value="${esc(def)}"></div>
+      <div class="field"><label>Date</label><input id="ldDate" type="date" value="${todayISO()}"></div>
+    </div>
+    <div class="calc-out" id="ldCalc"></div>
+    ${doseFieldsHTML()}
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="ldSave">Log dose</button>
+    </div>`);
+  wireDoseFields();
+  function calc(){
+    const mcg=fromDisplayDose($("#ldMcg").value, p); const {ml,units}=doseDraw(v,mcg);
+    const st=vialStats(v);
+    $("#ldCalc").innerHTML = `Draw <span class="big">${fmtNum(units,1)} units</span> &nbsp;(${fmtNum(ml,3)} mL)<br>
+      <span class="tiny muted">Remaining after: ${fmtDose(st.remainMcg-mcg, p)} of ${fmtDose(st.totalMcg, p)}</span>`;
+  }
+  $("#ldMcg").oninput=calc; calc();
+  $("#ldSave").onclick=()=>{
+    const mcg=fromDisplayDose($("#ldMcg").value, p); if(mcg<=0) return;
+    v.doses.push(Object.assign({ id:uid(), date:$("#ldDate").value, mcg }, readDoseFields()));
+    save(); closeModal(); renderAll();
+  };
+}
+function removeDose(vialId, doseId){
+  const v=vial(vialId); v.doses=v.doses.filter(d=>d.id!==doseId); save(); renderAll();
+}
+
+/* =========================================================
+   RENDER: PEPTIDES
+========================================================= */
+function renderPeptides(){
+  const el=$("#peptideList");
+  if(state.peptides.length===0){ el.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="big">🧬</div>No peptides yet. Add your first one.</div>`; return; }
+  el.innerHTML = state.peptides.map(p=>{
+    const vcount = state.vials.filter(v=>v.peptideId===p.id && !v.archived).length;
+    const stock = p.stock||0;
+    const reorderAt = p.reorderAt??1;
+    const low = stock <= reorderAt;
+    const presets = p.presets||[];
+    const cpd = peptideCostPerDose(p);
+    return `<div class="card">
+      <div class="card-head">
+        <div><h3><span class="swatch" style="background:${p.color}"></span>${esc(p.name)}</h3>
+          <div class="meta">${p.vialMg?`${esc(p.vialMg)} mg/vial · `:""}${p.defaultDoseMcg?`Default ${fmtDose(p.defaultDoseMcg, p)} · `:""}${vcount} active vial${vcount!==1?"s":""}</div></div>
+        <div class="inline-actions">
+          <button class="btn ghost sm" onclick="peptideForm(peptide('${p.id}'))">Edit</button>
+          <button class="btn danger sm" onclick="deletePeptide('${p.id}')">Del</button>
+        </div>
+      </div>
+      ${p.notes?`<div class="tiny muted" style="margin-bottom:10px;">${esc(p.notes)}</div>`:""}
+      <div class="kv"><span>Dry stock</span>
+        <span>${stock} vial${stock!==1?"s":""} ${low?`<span class="pill bad">Reorder</span>`:`<span class="pill good">OK</span>`}
+          <button class="btn ghost sm" onclick="restock('${p.id}')">Restock</button></span></div>
+      ${p.costPerVial?`<div class="kv"><span>Cost / vial</span><span>${money(p.costPerVial)}</span></div>`:""}
+      ${cpd!==null?`<div class="kv"><span>Cost / dose</span><span>${money(cpd)}${p.defaultDoseMcg?` <span class="muted tiny">@ ${fmtDose(p.defaultDoseMcg, p)}</span>`:""}</span></div>`:""}
+      ${p.halfLifeHours?`<div class="kv"><span>Half-life</span><span>${esc(p.halfLifeHours)} h</span></div>`:""}
+      <hr class="sep">
+      <div class="sec-h">Reconstitution presets</div>
+      ${presets.length===0?`<div class="tiny muted" style="margin-bottom:8px;">No presets. Save common mg/mL combos to auto-fill when mixing a vial.</div>`:
+        presets.map(pr=>`<div class="kv">
+          <span><span class="pill">${esc(presetLabel(pr))}</span></span>
+          <span class="inline-actions">
+            <button class="btn ghost sm" onclick="presetForm('${p.id}', (peptide('${p.id}').presets||[]).find(x=>x.id==='${pr.id}'))">Edit</button>
+            <button class="btn danger sm" onclick="deletePreset('${p.id}','${pr.id}')">✕</button>
+          </span></div>`).join("")}
+      <button class="btn ghost sm" style="margin-top:8px;" onclick="presetForm('${p.id}')">+ Add preset</button>
+      <hr class="sep">
+      <div class="sec-h">Schedules</div>
+      ${(p.schedules||[]).length===0?`<div class="tiny muted" style="margin-bottom:8px;">No recurring schedule.</div>`:
+        p.schedules.map(s=>`<div class="kv">
+          <span><span class="pill">${esc(scheduleLabel(s))}</span> ${fmtDose(s.doseMcg, p)}</span>
+          <span class="inline-actions">
+            <button class="btn ghost sm" onclick="scheduleForm('${p.id}', peptide('${p.id}').schedules.find(x=>x.id==='${s.id}'))">Edit</button>
+            <button class="btn danger sm" onclick="deleteSchedule('${p.id}','${s.id}')">✕</button>
+          </span></div>`).join("")}
+      <button class="btn ghost sm" style="margin-top:10px;" onclick="scheduleForm('${p.id}')">+ Add schedule</button>
+    </div>`;
+  }).join("");
+}
+
+/* =========================================================
+   RENDER: VIALS
+========================================================= */
+function vialCard(v, compact=false){
+  const p=peptide(v.peptideId); const st=vialStats(v);
+  let barCls="good", expPill="";
+  if(st.pctLeft<25) barCls="bad"; else if(st.pctLeft<50) barCls="warn";
+  if(st.daysLeft!==null){
+    if(st.daysLeft<0) expPill=`<span class="pill bad">Expired ${-st.daysLeft}d ago</span>`;
+    else if(st.daysLeft<=5) expPill=`<span class="pill warn">${st.daysLeft}d left</span>`;
+    else expPill=`<span class="pill good">${st.daysLeft}d left</span>`;
+  }
+  const dose = p?.defaultDoseMcg ? +p.defaultDoseMcg : 0;
+  const draw = dose>0 ? doseDraw(v,dose) : null;
+  const dosesLeft = dose>0 ? Math.floor(st.remainMcg/dose) : null;
+  return `<div class="card" style="${v.archived?'opacity:.6;':''}">
+    <div class="card-head">
+      <div><h3><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"Unlinked")} ${v.label?`<span class="muted tiny">· ${esc(v.label)}</span>`:""}</h3>
+        <div class="meta">${esc(v.mgContent)} mg in ${esc(v.bacWaterMl)} mL · ${fmtNum(st.concentration*1000)} mcg/mL</div></div>
+      ${expPill}
+    </div>
+    <div class="bar ${barCls}" style="margin-bottom:6px;"><span style="width:${Math.max(0,Math.min(100,st.pctLeft))}%"></span></div>
+    <div class="kv"><span>Remaining</span><span>${fmtDose(st.remainMcg, p)} · ${fmtNum(st.remainMl,2)} mL (${fmtNum(st.pctLeft,0)}%)</span></div>
+    ${draw?`<div class="kv"><span>Per dose (${fmtDose(dose, p)})</span><span>${fmtNum(draw.units,1)} units · ${fmtNum(draw.ml,3)} mL</span></div>`:""}
+    ${dosesLeft!==null?`<div class="kv"><span>Doses left</span><span>~${dosesLeft}</span></div>`:""}
+    <div class="kv"><span>Mixed</span><span>${v.dateMixed||"—"}${st.expiry?` → exp ${st.expiry}`:""}</span></div>
+    ${(v.pricePaid||v.priceSold)?`<div class="kv"><span>Price</span><span>${v.pricePaid?"paid "+money(v.pricePaid):""}${v.priceSold?" · sold "+money(v.priceSold):""}</span></div>`:""}
+    ${(()=>{ const cpd = dose>0?vialCostPerDose(v,dose):null; return cpd!==null?`<div class="kv"><span>Cost / dose</span><span>${money(cpd)}</span></div>`:""; })()}
+    ${compact?"":`
+    <hr class="sep">
+    <div class="inline-actions">
+      <button class="btn sm" onclick="logDoseForm('${v.id}')">+ Log dose</button>
+      <button class="btn ghost sm" onclick="vialForm(vial('${v.id}'))">Edit</button>
+      <button class="btn ghost sm" onclick="viewDoses('${v.id}')">History (${(v.doses||[]).length})</button>
+      <button class="btn ghost sm" onclick="archiveVial('${v.id}')">${v.archived?"Unarchive":"Archive"}</button>
+      <button class="btn danger sm" onclick="deleteVial('${v.id}')">Del</button>
+    </div>`}
+  </div>`;
+}
+function renderVials(){
+  const el=$("#vialList");
+  const list = state.vials.filter(v=> showArchived ? true : !v.archived);
+  if(list.length===0){ el.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="big">💧</div>No vials yet. Add a vial to start tracking.</div>`; return; }
+  // sort: active first, by expiry
+  list.sort((a,b)=> (a.archived-b.archived) || ((vialStats(a).daysLeft??999)-(vialStats(b).daysLeft??999)));
+  el.innerHTML = list.map(v=>vialCard(v)).join("");
+}
+function viewDoses(vialId){
+  const v=vial(vialId); const p=peptide(v.peptideId);
+  const doses=[...(v.doses||[])].sort((a,b)=> b.date.localeCompare(a.date));
+  openModal(`
+    <h2>Dose History · ${esc(p?.name||"Vial")}</h2>
+    ${doses.length===0?`<p class="muted">No doses logged.</p>`:
+      doses.map(d=>{ const {units,ml}=doseDraw(v,d.mcg);
+        const rating = d.rating?` · ${"★".repeat(+d.rating)}${"☆".repeat(5-(+d.rating))}`:"";
+        return `<div class="day-dose"><div class="info">
+          <div class="t">${fmtDose(d.mcg, p)}${d.site?` <span class="pill">${esc(d.route||"")} ${esc(d.site)}</span>`:""}</div>
+          <div class="s">${d.date} · ${fmtNum(units,1)} units · ${fmtNum(ml,3)} mL${rating}</div>
+          ${d.notes?`<div class="s" style="margin-top:2px;">📝 ${esc(d.notes)}</div>`:""}</div>
+          <button class="btn danger sm" onclick="removeDose('${v.id}','${d.id}'); viewDoses('${v.id}')">Remove</button></div>`;
+      }).join("")}
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Close</button></div>`);
+}
+
+/* =========================================================
+   RENDER: CALENDAR
+========================================================= */
+let calCursor = new Date(); calCursor.setDate(1);
+$("#calPrev").onclick=()=>{ calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); };
+$("#calNext").onclick=()=>{ calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); };
+$("#calToday").onclick=()=>{ calCursor=new Date(); calCursor.setDate(1); renderCalendar(); };
+
+/* ---- plan-ahead mode: stamp doses onto dates by clicking ---- */
+let planMode=null; // {peptideId, doseMcg, name, color}
+$("#calAddDose").onclick=()=>{ planMode ? exitPlan() : openPlanSetup(); };
+function openPlanSetup(){
+  if(state.peptides.length===0){ alert("Add a peptide first."); showView("peptides"); return; }
+  const opts=state.peptides.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  openModal(`
+    <h2>Plan doses ahead</h2>
+    <p class="muted tiny" style="margin-bottom:12px;">Pick a peptide + dose, then click dates on the calendar to add them. Click a planned date again to remove it.</p>
+    <div class="row">
+      <div class="field"><label>Peptide</label><select id="planP">${opts}</select></div>
+      <div class="field"><label>Dose (<span id="planUnit">mcg</span>)</label><input id="planD" type="number" min="0" step="any"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="planStart">Start clicking dates</button>
+    </div>`);
+  const pSel=$("#planP");
+  const sync=()=>{ const p=peptide(pSel.value); $("#planUnit").textContent=peptideUnit(p); $("#planD").value=p?.defaultDoseMcg?toDisplayDose(p.defaultDoseMcg,p):""; };
+  pSel.onchange=sync; sync();
+  $("#planStart").onclick=()=>{
+    const p=peptide(pSel.value);
+    const mcg=fromDisplayDose($("#planD").value, p); if(mcg<=0){ $("#planD").focus(); return; }
+    planMode={ peptideId:p.id, doseMcg:mcg, name:p.name, color:p.color };
+    closeModal(); renderCalendar(); updatePlanBanner();
+  };
+}
+function exitPlan(){ planMode=null; renderCalendar(); updatePlanBanner(); }
+function updatePlanBanner(){
+  const b=$("#planBanner"), btn=$("#calAddDose"); if(!b) return;
+  if(!planMode){ b.innerHTML=""; if(btn){ btn.textContent="+ Add dose"; btn.classList.remove("ghost"); } return; }
+  if(btn) btn.textContent="Done";
+  const count=state.manualEvents.filter(e=>e.peptideId===planMode.peptideId && (+e.doseMcg)===(+planMode.doseMcg)).length;
+  b.innerHTML=`<div class="card" style="margin:0 0 12px;border-color:var(--accent);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span class="pill" style="background:${planMode.color};color:#fff;">${esc(planMode.name)} · ${fmtDose(planMode.doseMcg, peptide(planMode.peptideId))}</span>
+    <span class="tiny muted">Click dates to add/remove · ${count} planned</span>
+    <div class="spacer"></div>
+    <button class="btn ghost sm" onclick="openPlanSetup()">Change dose</button>
+    <button class="btn sm" onclick="exitPlan()">Done</button>
+  </div>`;
+}
+function planClick(iso){
+  if(!planMode) return;
+  const existing=state.manualEvents.find(e=>e.date===iso && e.peptideId===planMode.peptideId && (+e.doseMcg)===(+planMode.doseMcg));
+  if(existing){
+    state.manualEvents=state.manualEvents.filter(e=>e!==existing);
+    delete state.completions[`manual|${existing.id}`];
+  } else {
+    state.manualEvents.push({ id:uid(), date:iso, peptideId:planMode.peptideId, doseMcg:planMode.doseMcg });
+  }
+  save(); renderCalendar(); updatePlanBanner(); renderDashboard();
+}
+
+// gather planned doses for a date -> [{key, peptideId, mcg, scheduleId|manualId, done, vialId}]
+function dosesForDate(dISO){
+  const out=[];
+  state.peptides.forEach(p=>{
+    (p.schedules||[]).forEach(s=>{
+      if(scheduleFires(s,dISO)){
+        const key=`${s.id}|${dISO}`;
+        const comp=state.completions[key];
+        out.push({ key, peptideId:p.id, mcg:s.doseMcg, done:!!comp, vialId:comp?.vialId, source:"schedule" });
+      }
+    });
+  });
+  state.manualEvents.filter(e=>e.date===dISO).forEach(e=>{
+    const key=`manual|${e.id}`;
+    const comp=state.completions[key];
+    out.push({ key, eventId:e.id, peptideId:e.peptideId, mcg:e.doseMcg, done:!!comp, vialId:comp?.vialId, source:"manual" });
+  });
+  return out;
+}
+function renderCalendar(){
+  $("#calDow").innerHTML = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  $("#calLabel").textContent = calCursor.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const year=calCursor.getFullYear(), month=calCursor.getMonth();
+  const first=new Date(year,month,1); const startDow=first.getDay();
+  const start=new Date(year,month,1-startDow);
+  let html="";
+  for(let i=0;i<42;i++){
+    const d=new Date(start.getTime()+i*86400000); const iso=toISO(d);
+    const other = d.getMonth()!==month;
+    const isToday = iso===todayISO();
+    const doses=dosesForDate(iso);
+    const chips=doses.slice(0,4).map(x=>{ const p=peptide(x.peptideId);
+      return `<div class="dose-chip ${x.done?'done':''}" style="${p?`border-left:3px solid ${p.color}`:''}">
+        ${x.done?'<span class="ck">✓</span>':''}<span class="lbl">${esc(p?.name||"?")}</span></div>`; }).join("");
+    const more = doses.length>4?`<div class="tiny muted">+${doses.length-4} more</div>`:"";
+    const planned = planMode && doses.some(x=>x.source==="manual" && x.peptideId===planMode.peptideId && (+x.mcg)===(+planMode.doseMcg));
+    const click = planMode ? `planClick('${iso}')` : `dayDetail('${iso}')`;
+    html+=`<div class="cal-cell ${other?'other':''} ${isToday?'today':''} ${planMode?'planning':''} ${planned?'planned':''}" onclick="${click}">
+      <div class="dnum">${d.getDate()}</div>${chips}${more}</div>`;
+  }
+  $("#calGrid").innerHTML=html;
+  renderCalFinance();
+}
+// spend summary for the calendar: logged (actual) + scheduled for the viewed month, plus forward projection
+function renderCalFinance(){
+  const el=$("#calFinance"); if(!el) return;
+  const y=calCursor.getFullYear(), m=calCursor.getMonth();
+  // actual logged spend this month (from real dose history)
+  let logged=0, loggedCount=0;
+  allDoses().forEach(d=>{ const dt=fromISO(d.date);
+    if(dt.getFullYear()===y && dt.getMonth()===m){ const c=doseCost(d.mcg, peptide(d.peptideId)); logged+=c; loggedCount++; }
+  });
+  // scheduled total + per-peptide for the viewed month (all planned occurrences)
+  let scheduled=0; const perP={}; const lastDay=new Date(y,m+1,0).getDate();
+  for(let day=1; day<=lastDay; day++){ const iso=toISO(new Date(y,m,day));
+    dosesForDate(iso).forEach(x=>{ const p=peptide(x.peptideId); if(!p) return;
+      const c=doseCost(x.mcg, p); scheduled+=c; perP[p.id]=(perP[p.id]||0)+c; });
+  }
+  // forward projection from today
+  const proj=(days)=>{ let s=0; for(let i=0;i<days;i++){ dosesForDate(addDaysISO(i)).forEach(x=>{ s+=doseCost(x.mcg, peptide(x.peptideId)); }); } return s; };
+  const p30=proj(30), p90=proj(90);
+  if(logged<=0 && scheduled<=0 && p30<=0 && p90<=0){
+    el.innerHTML=`<div class="card" style="margin-top:16px;"><div class="sec-h" style="margin-bottom:6px;">💵 Spend</div>
+      <div class="muted tiny">Add a <b>Cost per vial</b> on your peptides (Peptides tab) to see monthly and projected spend here.</div></div>`;
+    return;
+  }
+  const monthLabel=calCursor.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const perRows=Object.entries(perP).filter(([,c])=>c>0).sort((a,b)=>b[1]-a[1]).map(([id,c])=>{
+    const p=peptide(id); return `<div class="kv"><span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"?")}</span><span>${money(c)}</span></div>`;
+  }).join("");
+  el.innerHTML=`<div class="card" style="margin-top:16px;">
+    <div class="sec-h" style="margin-bottom:10px;">💵 Spend</div>
+    <div class="kv"><span>${monthLabel} — logged${loggedCount?` <span class="muted tiny">(${loggedCount} dose${loggedCount!==1?"s":""})</span>`:""}</span><span><b>${money(logged)}</b></span></div>
+    <div class="kv"><span>${monthLabel} — scheduled total</span><span>${money(scheduled)}</span></div>
+    ${perRows?`<div style="margin:6px 0 4px;padding-left:4px;border-left:2px solid var(--border);">${perRows}</div>`:""}
+    <hr class="sep">
+    <div class="sec-h" style="margin-bottom:8px;">Projected (from today)</div>
+    <div class="kv"><span>Next 30 days</span><span>${money(p30)}</span></div>
+    <div class="kv"><span>Next 90 days</span><span>${money(p90)}</span></div>
+  </div>`;
+}
+function dayDetail(dISO){
+  const doses=dosesForDate(dISO);
+  const d=fromISO(dISO);
+  const pepOptions = state.peptides.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  openModal(`
+    <h2>${d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</h2>
+    ${doses.length===0?`<p class="muted" style="margin-bottom:12px;">No doses scheduled.</p>`:
+      `<div style="margin-bottom:14px;">${doses.map(x=>{ const p=peptide(x.peptideId);
+        const vials=state.vials.filter(v=>v.peptideId===x.peptideId && !v.archived);
+        return `<div class="day-dose">
+          <div class="check ${x.done?'on':''}" onclick="toggleDose('${dISO}', ${JSON.stringify(x).replace(/"/g,'&quot;')})">✓</div>
+          <div class="info"><div class="t"><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||'?')} · ${fmtDose(x.mcg, p)}</div>
+            <div class="s">${x.source==='schedule'?'Scheduled':'One-off'}${x.done&&x.vialId?` · from ${esc(peptide(vial(x.vialId)?.peptideId)?.name||'')} ${vial(x.vialId)?.label||''}`:''}${x.done?' · taken':''}</div>
+          </div>
+          ${x.source==='manual'?`<button class="btn danger sm" onclick="deleteManual('${x.eventId}','${dISO}')">✕</button>`:''}
+        </div>`;
+      }).join("")}</div>`}
+    <hr class="sep">
+    <div style="font-size:12.5px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;">Add one-off dose</div>
+    ${state.peptides.length===0?`<p class="muted tiny">Add a peptide first.</p>`:`
+    <div class="row">
+      <div class="field"><label>Peptide</label><select id="meP">${pepOptions}</select></div>
+      <div class="field"><label>Dose (<span id="meUnit">mcg</span>)</label><input id="meD" type="number" min="0" step="any"></div>
+    </div>
+    <button class="btn sm" id="meAdd">Add to this day</button>`}
+    <div class="modal-actions"><button class="btn ghost" onclick="closeModal()">Close</button></div>`);
+  const meP=$("#meP");
+  if(meP){
+    const sync=()=>{ const p=peptide(meP.value); $("#meUnit").textContent=peptideUnit(p); $("#meD").value=p&&p.defaultDoseMcg?toDisplayDose(p.defaultDoseMcg,p):""; };
+    meP.onchange=sync; sync();
+    $("#meAdd").onclick=()=>{
+      const p=peptide(meP.value); const mcg=fromDisplayDose($("#meD").value, p); if(mcg<=0) return;
+      state.manualEvents.push({ id:uid(), date:dISO, peptideId:meP.value, doseMcg:mcg });
+      save(); dayDetail(dISO); renderCalendar();
+    };
+  }
+}
+function deleteManual(eventId, dISO){
+  state.manualEvents=state.manualEvents.filter(e=>e.id!==eventId);
+  delete state.completions[`manual|${eventId}`];
+  save(); dayDetail(dISO); renderCalendar();
+}
+// toggle taken; when marking taken, pick a vial to decrement
+function toggleDose(dISO, x){
+  const key=x.key;
+  if(state.completions[key]){
+    // un-take: remove decrement
+    const comp=state.completions[key];
+    if(comp.vialId){ const v=vial(comp.vialId); if(v) v.doses=v.doses.filter(d=>d.id!==comp.doseId); }
+    delete state.completions[key];
+    save(); dayDetail(dISO); renderCalendar();
+    return;
+  }
+  // mark taken: choose vial
+  const vials=state.vials.filter(v=>v.peptideId===x.peptideId && !v.archived);
+  const p=peptide(x.peptideId);
+  if(vials.length===0){
+    // no vial - just mark done without decrement
+    state.completions[key]={ takenDate:dISO };
+    save(); dayDetail(dISO); renderCalendar(); return;
+  }
+  openModal(`
+    <h2>Mark dose taken</h2>
+    <p class="muted tiny" style="margin-bottom:12px;">${esc(p?.name||'')} · ${fmtDose(x.mcg, p)} on ${dISO}</p>
+    <div class="field"><label>Draw from vial</label>
+      <select id="tdVial">${vials.map(v=>{ const st=vialStats(v); return `<option value="${v.id}">${esc(v.label||'Vial')} · ${fmtDose(st.remainMcg, p)} left${st.daysLeft<0?' (EXPIRED)':''}</option>`; }).join("")}</select>
+    </div>
+    <div class="calc-out" id="tdCalc"></div>
+    ${doseFieldsHTML()}
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="dayDetail('${dISO}')">Cancel</button>
+      <button class="btn" id="tdSave">Confirm</button>
+    </div>`);
+  wireDoseFields();
+  function calc(){ const v=vial($("#tdVial").value); const {units,ml}=doseDraw(v,+x.mcg||0);
+    $("#tdCalc").innerHTML=`Draw <span class="big">${fmtNum(units,1)} units</span> (${fmtNum(ml,3)} mL)`; }
+  $("#tdVial").onchange=calc; calc();
+  $("#tdSave").onclick=()=>{
+    const vId=$("#tdVial").value; const v=vial(vId);
+    const doseId=uid();
+    v.doses.push(Object.assign({ id:doseId, date:dISO, mcg:+x.mcg||0 }, readDoseFields()));
+    state.completions[key]={ takenDate:dISO, vialId:vId, doseId };
+    save(); dayDetail(dISO); renderCalendar();
+  };
+}
+
+/* =========================================================
+   RENDER: DASHBOARD
+========================================================= */
+function renderDashboard(){
+  const activeVials=state.vials.filter(v=>!v.archived);
+  const expSoon=activeVials.filter(v=>{ const dl=vialStats(v).daysLeft; return dl!==null && dl>=0 && dl<=5; }).length;
+  const expired=activeVials.filter(v=>{ const dl=vialStats(v).daysLeft; return dl!==null && dl<0; }).length;
+  const lowVials=activeVials.filter(v=>vialStats(v).pctLeft<25).length;
+  const totalStock = state.peptides.reduce((a,p)=>a+(p.stock||0),0);
+
+  // due today
+  const due=dueTodayDoses();
+  $("#dueToday").innerHTML = due.length ? `
+    <div class="card" style="margin-bottom:16px;border-color:var(--accent);">
+      <div class="sec-h" style="color:var(--accent);margin-bottom:10px;">🔔 Due today (${due.length})</div>
+      ${due.map(x=>{ const p=peptide(x.peptideId); return `<div class="kv">
+        <span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"?")} · ${fmtDose(x.mcg, p)}</span>
+        <button class="btn sm" onclick="dayDetail('${todayISO()}')">Log</button></div>`; }).join("")}
+    </div>` : "";
+
+  $("#statCards").innerHTML=`
+    <div class="card stat"><div class="num">${state.peptides.length}</div><div class="lbl">Peptides</div></div>
+    <div class="card stat"><div class="num">${activeVials.length}</div><div class="lbl">Active vials</div></div>
+    <div class="card stat"><div class="num">${totalStock}</div><div class="lbl">Dry vials in stock</div></div>
+    <div class="card stat"><div class="num" style="color:${expired?'var(--bad)':'inherit'}">${expSoon+expired}</div><div class="lbl">Expiring / expired</div></div>`;
+
+  // expiry reminders (vials with <= 7 days left, including expired)
+  const expList = activeVials
+    .map(v=>({v, dl:vialStats(v).daysLeft}))
+    .filter(o=> o.dl!==null && o.dl<=7)
+    .sort((a,b)=>a.dl-b.dl);
+  $("#expiryAlerts").innerHTML = expList.length ? `
+    <div class="card" style="margin-top:16px;border-color:color-mix(in srgb,var(--bad) 45%,var(--border));">
+      <div class="sec-h" style="color:var(--bad);margin-bottom:10px;">⏳ Expiring soon</div>
+      ${expList.map(({v,dl})=>{ const p=peptide(v.peptideId);
+        const pill = dl<0 ? `<span class="pill bad">Expired ${-dl}d ago</span>`
+                   : dl===0 ? `<span class="pill bad">Expires today</span>`
+                   : `<span class="pill warn">${dl} day${dl!==1?"s":""} left</span>`;
+        return `<div class="kv"><span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"?")}${v.label?` <span class="muted tiny">${esc(v.label)}</span>`:""}</span>
+          <span>${pill} <button class="btn ghost sm" onclick="archiveVial('${v.id}')">Archive</button></span></div>`;
+      }).join("")}
+    </div>` : "";
+
+  // reorder reminders
+  const reorderList = state.peptides.filter(p=> (p.stock||0) <= (p.reorderAt??1));
+  $("#reorderAlerts").innerHTML = reorderList.length ? `
+    <div class="card" style="margin-top:16px;border-color:color-mix(in srgb,var(--warn) 45%,var(--border));">
+      <div class="sec-h" style="color:var(--warn);margin-bottom:10px;">⚠ Reorder reminders</div>
+      ${reorderList.map(p=>`<div class="kv"><span><span class="swatch" style="background:${p.color}"></span>${esc(p.name)}</span>
+        <span>${(p.stock||0)} dry vial${(p.stock||0)!==1?"s":""} left
+          <button class="btn ghost sm" onclick="restock('${p.id}')">Restock</button></span></div>`).join("")}
+    </div>` : "";
+
+  // supply forecast
+  const fc = state.peptides.map(p=>({p, f:peptideForecast(p)})).filter(o=> o.f && o.f.perDay>0);
+  $("#forecastCard").innerHTML = fc.length ? `
+    <div class="card" style="margin-top:16px;">
+      <div class="sec-h" style="margin-bottom:10px;">📦 Supply forecast</div>
+      ${fc.map(({p,f})=>{
+        const soon = f.daysMixed<=10;
+        return `<div class="kv"><span><span class="swatch" style="background:${p.color}"></span>${esc(p.name)}</span>
+          <span><span class="pill ${soon?'warn':'good'}">~${f.daysMixed}d</span> mixed runs out ${f.runOutMixed}
+          ${f.dosesReserve>0?` <span class="muted tiny">· +stock → ${f.runOutTotal}</span>`:""}</span></div>`;
+      }).join("")}
+    </div>` : "";
+
+  // adherence (last 30 days)
+  const ad=adherence(30);
+  $("#adherenceCard").innerHTML = ad.scheduled>0 ? `
+    <div class="card" style="margin-top:16px;">
+      <div class="sec-h" style="margin-bottom:10px;">✅ Adherence · last 30 days</div>
+      <div class="kv"><span>Overall</span><span>${ad.taken}/${ad.scheduled} doses · <b>${fmtNum(ad.pct,0)}%</b></span></div>
+      <div class="bar ${ad.pct>=80?'good':ad.pct>=50?'warn':'bad'}" style="margin:4px 0 12px;"><span style="width:${Math.min(100,ad.pct)}%"></span></div>
+      ${ad.perPeptide.map(o=>`<div class="kv"><span><span class="swatch" style="background:${o.p.color}"></span>${esc(o.p.name)}</span>
+        <span>${o.taken}/${o.scheduled} · ${o.pct!==null?fmtNum(o.pct,0)+"%":"—"}</span></div>`).join("")}
+    </div>` : "";
+
+  // upcoming 7 days
+  const up=$("#upcoming"); let rows="";
+  for(let i=0;i<7;i++){
+    const iso=toISO(new Date(Date.now()+i*86400000));
+    const doses=dosesForDate(iso);
+    if(doses.length===0) continue;
+    const label= i===0?"Today": i===1?"Tomorrow": fromISO(iso).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+    rows+=`<div class="day-dose"><div class="info"><div class="t">${label}</div>
+      <div class="s">${doses.map(x=>{const p=peptide(x.peptideId); return `<span class="dose-chip ${x.done?'done':''}" style="display:inline-flex;${p?`border-left:3px solid ${p.color}`:''}">${x.done?'✓ ':''}${esc(p?.name||'?')} ${fmtDose(x.mcg, p)}</span>`;}).join(" ")}</div></div>
+      <button class="btn ghost sm" onclick="showView('calendar')">View</button></div>`;
+  }
+  up.innerHTML = rows || `<div class="muted tiny">No doses scheduled in the next 7 days. Set up schedules under Peptides, or add doses on the Calendar.</div>`;
+
+  // estimated active levels (peptides with half-life + doses)
+  const levels = state.peptides.map(p=>({p, lv:peptideLevel(p)})).filter(o=> o.lv && o.lv.lastT!==null);
+  $("#levelsHead").style.display = levels.length ? "" : "none";
+  $("#levelCards").innerHTML = levels.map(({p,lv})=>{
+    const dose=+p.defaultDoseMcg||0;
+    const pct = dose>0 ? Math.min(100, lv.level/dose*100) : null;
+    return `<div class="card">
+      <div class="card-head"><div><h3><span class="swatch" style="background:${p.color}"></span>${esc(p.name)}</h3>
+        <div class="meta">Half-life ${esc(p.halfLifeHours)} h · last dose ${fmtAgo(lv.lastT)}</div></div></div>
+      <div class="kv"><span>Estimated in system</span><span>${fmtDose(lv.level, p)}${pct!==null?` <span class="muted tiny">(~${fmtNum(pct,0)}% of a dose)</span>`:""}</span></div>
+      ${decaySparkline(lv.level, lv.hl, p.color)}
+      <div class="tiny muted">Projected decay over the next ${fmtNum(lv.hl*4,0)} h</div>
+    </div>`;
+  }).join("");
+
+  const dv=$("#dashVials");
+  const list=activeVials.slice().sort((a,b)=>(vialStats(a).daysLeft??999)-(vialStats(b).daysLeft??999));
+  dv.innerHTML = list.length? list.map(v=>vialCard(v,true)).join("") : `<div class="empty" style="grid-column:1/-1"><div class="big">💧</div>No active vials.</div>`;
+}
+
+/* =========================================================
+   RENDER: SITES
+========================================================= */
+function bodyMapSVG(){
+  const fig=(view)=>{
+    const markers = Object.entries(SITE_COORDS).filter(([,c])=>c.view===view).map(([name,c])=>{
+      const st=siteStatus(name);
+      const color=(!st.lastISO||st.rested)?"var(--good)":"var(--bad)";
+      return `<circle cx="${c.x}" cy="${c.y}" r="8.5" fill="${color}" stroke="var(--bg-card)" stroke-width="2" style="cursor:pointer;" onclick="siteInfo('${name.replace(/'/g,"\\'")}')"><title>${esc(name)}${st.lastISO?` — used ${st.daysSince}d ago`:" — open"}</title></circle>`;
+    }).join("");
+    return `<div style="text-align:center;">
+      <svg viewBox="0 0 140 300" style="width:100%;max-width:160px;height:auto;">
+        <g fill="var(--border)" stroke="var(--border-soft)" stroke-width="1" stroke-linejoin="round">${BODY_SILHOUETTE}</g>
+        ${markers}
+      </svg>
+      <div class="tiny muted" style="margin-top:2px;">${view==="front"?"Front":"Back"}</div>
+    </div>`;
+  };
+  return `<div class="card" style="margin-bottom:16px;">
+    <div class="sec-h" style="margin-bottom:10px;">Body map</div>
+    <div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">${fig("front")}${fig("back")}</div>
+    <div class="legend" style="justify-content:center;margin-top:8px;">
+      <span><span class="swatch" style="background:var(--good)"></span> Open / rested</span>
+      <span><span class="swatch" style="background:var(--bad)"></span> Resting</span>
+      <span class="muted">Tap a marker for details</span>
+    </div>
+  </div>`;
+}
+function siteInfo(name){
+  const st=siteStatus(name);
+  const recent=allDoses().filter(d=>d.site===name).slice(0,8);
+  openModal(`
+    <h2>${esc(name)}</h2>
+    <div class="kv"><span>Status</span><span>${!st.lastISO?'<span class="pill good">Open</span>':st.rested?'<span class="pill good">Rested</span>':'<span class="pill bad">Resting</span>'}</span></div>
+    <div class="kv"><span>Last used</span><span>${st.lastISO?`${st.daysSince}d ago · ${st.lastISO}`:"Never"}</span></div>
+    <hr class="sep">
+    <div class="sec-h">Recent injections here</div>
+    ${recent.length===0?`<div class="muted tiny">None yet.</div>`:recent.map(d=>{ const p=peptide(d.peptideId);
+      return `<div class="kv"><span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"?")} · ${fmtDose(d.mcg, p)}</span><span class="muted tiny">${esc(d.route||"")} · ${d.date}</span></div>`; }).join("")}
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Close</button></div>`);
+}
+function renderSites(){
+  const el=$("#siteView"); if(!el) return;
+  const rest=state.settings.siteRestDays||4;
+  const recent=allDoses().filter(d=>d.site).slice(0,12);
+  el.innerHTML = bodyMapSVG() + ["SubQ","IM"].map(g=>`
+    <h3 style="margin:8px 0 10px;">${g} sites</h3>
+    <div class="grid cols-3" style="margin-bottom:8px;">
+      ${SITES[g].map(s=>{ const st=siteStatus(s);
+        const cls = !st.lastISO ? "good" : st.rested ? "good" : "bad";
+        const label = !st.lastISO ? "Open" : st.rested ? "Rested" : "Resting";
+        return `<div class="card" style="padding:13px 15px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <b>${esc(s)}</b><span class="pill ${cls}">${label}</span></div>
+          <div class="tiny muted" style="margin-top:5px;">${st.lastISO? `Last used ${st.daysSince}d ago · ${st.lastISO}` : "Never used"}</div>
+        </div>`; }).join("")}
+    </div>`).join("") + `
+    <h3 style="margin:18px 0 10px;">Recent injections</h3>
+    <div class="card">
+      ${recent.length===0?`<div class="muted tiny">No site-tagged injections yet. Pick a site when you log a dose.</div>`:
+        recent.map(d=>{ const p=peptide(d.peptideId);
+          return `<div class="kv"><span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||"?")} · ${fmtDose(d.mcg, p)}</span>
+            <span>${esc(d.route||"")} <b>${esc(d.site)}</b> <span class="muted tiny">${d.date}</span></span></div>`;
+        }).join("")}
+    </div>`;
+}
+
+/* =========================================================
+   PROGRESS (bodyweight)
+========================================================= */
+$("#addWeightBtn").onclick=()=>weightForm();
+function weightForm(w){
+  const isNew=!w;
+  w = w || { id:uid(), date:todayISO(), weight:"", note:"" };
+  const unit=state.settings.weightUnit||"lb";
+  openModal(`
+    <h2>${isNew?"Log":"Edit"} Weight</h2>
+    <div class="row">
+      <div class="field"><label>Date</label><input id="wDate" type="date" value="${w.date}"></div>
+      <div class="field"><label>Weight (${esc(unit)})</label><input id="wVal" type="number" min="0" step="any" value="${esc(w.weight)}"></div>
+    </div>
+    <div class="field"><label>Note (optional)</label><input id="wNote" value="${esc(w.note||"")}" placeholder="e.g. morning, fasted"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="wSave">Save</button>
+    </div>`);
+  $("#wSave").onclick=()=>{
+    const val=+$("#wVal").value; if(!(val>0)){ $("#wVal").focus(); return; }
+    w.date=$("#wDate").value||todayISO(); w.weight=val; w.note=$("#wNote").value.trim();
+    if(isNew) state.weights.push(w);
+    save(); closeModal(); renderAll();
+  };
+}
+function deleteWeight(id){ state.weights=state.weights.filter(w=>w.id!==id); save(); renderAll(); }
+function weightChartSVG(entries){
+  if(entries.length<1) return `<div class="muted tiny" style="padding:24px 0;text-align:center;">No weight entries yet. Log your first to see the graph.</div>`;
+  const W=620,H=220,pad={l:42,r:14,t:14,b:28};
+  const xs=entries.map(e=>fromISO(e.date).getTime()), ys=entries.map(e=>+e.weight);
+  let minX=Math.min(...xs), maxX=Math.max(...xs); if(minX===maxX){ minX-=86400000; maxX+=86400000; }
+  let minY=Math.min(...ys), maxY=Math.max(...ys); const padY=(maxY-minY)*0.15||1; minY-=padY; maxY+=padY;
+  const sx=t=>pad.l+(t-minX)/(maxX-minX)*(W-pad.l-pad.r);
+  const sy=v=>pad.t+(1-(v-minY)/(maxY-minY))*(H-pad.t-pad.b);
+  const pts=entries.map(e=>[sx(fromISO(e.date).getTime()), sy(+e.weight)]);
+  const line=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area=`M${pts[0][0].toFixed(1)} ${(H-pad.b).toFixed(1)} `+pts.map(p=>"L"+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")+` L${pts[pts.length-1][0].toFixed(1)} ${(H-pad.b).toFixed(1)} Z`;
+  const dots=pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="var(--accent)"><title>${entries[i].date}: ${entries[i].weight}</title></circle>`).join("");
+  const yl=[minY,(minY+maxY)/2,maxY];
+  const grid=yl.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="var(--border-soft)" stroke-width="1"/><text x="${pad.l-6}" y="${(sy(v)+3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-faint)">${fmtNum(v,1)}</text>`).join("");
+  const xlab=`<text x="${pad.l}" y="${H-8}" font-size="10" fill="var(--text-faint)">${entries[0].date}</text><text x="${W-pad.r}" y="${H-8}" text-anchor="end" font-size="10" fill="var(--text-faint)">${entries[entries.length-1].date}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">${grid}
+    <path d="${area}" fill="var(--accent)" opacity="0.10"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${xlab}</svg>`;
+}
+function renderProgress(){
+  if(!$("#weightChart")) return;
+  const unit=state.settings.weightUnit||"lb";
+  const entries=[...state.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  const cur=entries.length?+entries[entries.length-1].weight:null;
+  const start=entries.length?+entries[0].weight:null;
+  const change=(cur!=null&&start!=null)?cur-start:null;
+  const cutoff=addDaysISO(-30);
+  const past=entries.filter(e=>e.date<=cutoff).slice(-1)[0]||entries[0];
+  const change30=(cur!=null&&past)?cur-(+past.weight):null;
+  $("#weightStats").innerHTML = entries.length? `
+    <div class="card stat"><div class="num">${fmtNum(cur,1)} <span class="tiny muted">${esc(unit)}</span></div><div class="lbl">Current</div></div>
+    <div class="card stat"><div class="num">${change>0?"+":""}${fmtNum(change,1)}</div><div class="lbl">Since first entry</div></div>
+    <div class="card stat"><div class="num">${change30>0?"+":""}${fmtNum(change30,1)}</div><div class="lbl">Last 30 days</div></div>` : `
+    <div class="card stat" style="grid-column:1/-1"><div class="lbl">No entries yet — log your weight to see stats.</div></div>`;
+  $("#weightChart").innerHTML = weightChartSVG(entries);
+  const desc=[...entries].reverse();
+  $("#weightTable").innerHTML = desc.length? `
+    <div class="kv" style="font-weight:700;border-bottom:1px solid var(--border);padding-bottom:8px;"><span>Date</span><span>Weight</span></div>`+
+    desc.map(w=>`<div class="kv"><span>${w.date}${w.note?` <span class="muted tiny">${esc(w.note)}</span>`:""}</span>
+      <span>${fmtNum(w.weight,1)} ${esc(unit)}
+        <button class="btn ghost sm" onclick="weightForm(state.weights.find(x=>x.id==='${w.id}'))">Edit</button>
+        <button class="btn danger sm" onclick="deleteWeight('${w.id}')">✕</button></span></div>`).join("")
+    : `<div class="muted tiny">No weight log yet.</div>`;
+}
+
+/* =========================================================
+   RENDER: FINANCES
+========================================================= */
+function renderFinances(){
+  let spent=0, earned=0;
+  state.vials.forEach(v=>{ spent+=+v.pricePaid||0; earned+=+v.priceSold||0; });
+  $("#finStats").innerHTML=`
+    <div class="card stat"><div class="num">${money(spent)}</div><div class="lbl">Total spent (vials)</div></div>
+    <div class="card stat"><div class="num" style="color:var(--good)">${money(earned)}</div><div class="lbl">Total sold</div></div>
+    <div class="card stat"><div class="num" style="color:${earned-spent>=0?'var(--good)':'var(--bad)'}">${money(earned-spent)}</div><div class="lbl">Net</div></div>`;
+
+  // spend over time (logged-dose cost)
+  const t=currentSpendTotals();
+  $("#spendStats").innerHTML=`
+    <div class="card stat"><div class="num">${money(t.week)}</div><div class="lbl">This week</div></div>
+    <div class="card stat"><div class="num">${money(t.month)}</div><div class="lbl">This month</div></div>
+    <div class="card stat"><div class="num">${money(t.quarter)}</div><div class="lbl">This quarter</div></div>
+    <div class="card stat"><div class="num">${money(t.year)}</div><div class="lbl">This year</div></div>
+    <div class="card stat"><div class="num">${money(t.all)}</div><div class="lbl">All time</div></div>`;
+  renderSpendBreakdown();
+
+  const rows=state.vials.filter(v=>v.pricePaid||v.priceSold);
+  $("#finTable").innerHTML = rows.length===0 ? `<div class="muted tiny">No prices recorded yet. Add price paid/sold when creating or editing a vial (or set Cost per vial on a peptide).</div>` : `
+    <div class="kv" style="font-weight:700;border-bottom:1px solid var(--border);padding-bottom:8px;"><span>Vial</span><span>Paid / Sold / Net</span></div>`+
+    rows.map(v=>{ const p=peptide(v.peptideId); const paid=+v.pricePaid||0, sold=+v.priceSold||0;
+      return `<div class="kv"><span><span class="swatch" style="background:${p?.color||'#888'}"></span>${esc(p?.name||'?')} ${v.label?esc(v.label):''} <span class="muted tiny">${v.dateMixed||''}</span></span>
+      <span>${money(paid)} / ${money(sold)} / <b style="color:${sold-paid>=0?'var(--good)':'var(--bad)'}">${money(sold-paid)}</b></span></div>`;
+    }).join("");
+}
+function renderSpendBreakdown(){
+  const el=$("#spendBreakdown"); if(!el) return;
+  const g=$("#spendGran")?.value||"month";
+  const list=spendByPeriod(g);
+  if(list.length===0){ el.innerHTML=`<div class="muted tiny">No logged doses with cost data yet. Set <b>Cost per vial</b> on your peptides and log doses to see spend here.</div>`; return; }
+  const max=Math.max(...list.map(x=>x.total));
+  const grand=list.reduce((a,x)=>a+x.total,0);
+  el.innerHTML = list.map(x=>`<div style="margin-bottom:10px;">
+      <div class="kv" style="padding:2px 0;"><span>${esc(x.label)}</span><span><b>${money(x.total)}</b></span></div>
+      <div class="bar"><span style="width:${max>0?x.total/max*100:0}%"></span></div>
+    </div>`).join("") + `<div class="kv" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;"><span class="muted">Total (${list.length} period${list.length!==1?"s":""})</span><span><b>${money(grand)}</b></span></div>`;
+}
+$("#spendGran")?.addEventListener("change", renderSpendBreakdown);
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+const THEMES=[
+  {id:"midnight",name:"Midnight",sw:["#0b0d12","#171c27","#5b8cff"]},
+  {id:"warm",name:"Warm",sw:["#1a1513","#2a201b","#e8915b"]},
+  {id:"crisp",name:"Crisp",sw:["#f4f6fa","#ffffff","#2f6df0"]},
+  {id:"retro",name:"Retro",sw:["#050805","#0b110b","#39ff14"]},
+];
+const settingsBg=$("#settingsBg");
+$("#settingsBtn").onclick=()=>{ openSettings(); };
+$("#settingsClose").onclick=()=>{ settingsBg.classList.remove("open"); };
+settingsBg.onclick=e=>{ if(e.target===settingsBg) settingsBg.classList.remove("open"); };
+function openSettings(){
+  $("#themeGrid").innerHTML=THEMES.map(t=>`
+    <div class="theme-opt ${state.settings.theme===t.id?'active':''}" onclick="setTheme('${t.id}')">
+      <div class="swatches">${t.sw.map(c=>`<div class="sw" style="background:${c}"></div>`).join("")}</div>
+      <div class="name">${t.name}</div>
+    </div>`).join("");
+  $("#setStability").value=state.settings.defaultStability;
+  $("#setUnitsPerMl").value=state.settings.unitsPerMl;
+  $("#setCurrency").value=state.settings.currency;
+  $("#setRestDays").value=state.settings.siteRestDays??4;
+  $("#setNotify").checked=!!state.settings.notifications;
+  $("#setWeightUnit").value=state.settings.weightUnit||"lb";
+  settingsBg.classList.add("open");
+}
+function setTheme(id){ state.settings.theme=id; document.documentElement.setAttribute("data-theme",id); save(); openSettings(); }
+$("#setStability").addEventListener("change",e=>{ state.settings.defaultStability=+e.target.value||28; save(); });
+$("#setUnitsPerMl").addEventListener("change",e=>{ state.settings.unitsPerMl=+e.target.value||100; save(); renderAll(); });
+$("#setCurrency").addEventListener("change",e=>{ state.settings.currency=e.target.value||"$"; save(); renderAll(); });
+$("#setRestDays").addEventListener("change",e=>{ state.settings.siteRestDays=Math.max(0,Math.floor(+e.target.value||0)); save(); renderAll(); });
+$("#setWeightUnit").addEventListener("change",e=>{ state.settings.weightUnit=e.target.value||"lb"; save(); renderAll(); });
+$("#setNotify").addEventListener("change",e=>{
+  if(e.target.checked){
+    if(!("Notification" in window)){ alert("This browser doesn't support notifications."); e.target.checked=false; return; }
+    Notification.requestPermission().then(perm=>{
+      state.settings.notifications = (perm==="granted");
+      e.target.checked = state.settings.notifications;
+      if(perm!=="granted") alert("Notification permission was not granted.");
+      else maybeNotify();
+      save();
+    });
+  } else { state.settings.notifications=false; save(); }
+});
+
+$("#exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`peptide-tracker-${todayISO()}.json`; a.click(); URL.revokeObjectURL(a.href);
+};
+$("#importBtn").onclick=()=> $("#importFile").click();
+$("#importFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const data=JSON.parse(r.result);
+    if(!data.peptides||!data.vials) throw 0;
+    if(!confirm("Replace all current data with this backup?")) return;
+    state=Object.assign(structuredClone(DEFAULT_STATE),data,{settings:Object.assign({},DEFAULT_STATE.settings,data.settings||{})});
+    save(); applyTheme(); renderAll(); settingsBg.classList.remove("open"); alert("Imported successfully.");
+  }catch(err){ alert("Invalid backup file."); } };
+  r.readAsText(f); e.target.value="";
+};
+$("#wipeBtn").onclick=()=>{
+  if(!confirm("Erase ALL data permanently? Export a backup first if unsure.")) return;
+  if(!confirm("Really erase everything? This cannot be undone.")) return;
+  state=structuredClone(DEFAULT_STATE); save(); applyTheme(); renderAll(); settingsBg.classList.remove("open");
+};
+
+/* =========================================================
+   INIT
+========================================================= */
+function applyTheme(){ document.documentElement.setAttribute("data-theme", state.settings.theme||"midnight"); }
+function renderAll(){
+  renderDashboard(); renderCalendar(); renderPeptides(); renderVials(); renderSites(); renderProgress(); renderFinances();
+}
+applyTheme();
+renderAll();
+maybeNotify();
+</script>
+</body>
+</html>
