@@ -3,14 +3,18 @@
 A personal peptide-tracking web app. **Single self-contained file** — no build step, no
 backend, no dependencies. Open `peptide-tracker.html` directly in a browser.
 
-- **Main file:** `peptide-tracker.html` (HTML + CSS + JS all inline). NOTE: the app file lives
-  on the **Desktop root** (`C:\Users\thoma\OneDrive\Desktop\peptide-tracker.html`), NOT inside
-  this `NexLabs Peptides` folder. This folder holds CLAUDE.md + `.claude/`. Edit the Desktop copy.
-- **Local link:** `file:///C:/Users/thoma/OneDrive/Desktop/peptide-tracker.html`
+- **Main file:** `peptide-tracker.html` (HTML + CSS + JS all inline), in THIS folder, which is a
+  git repo (remote: github.com/awesomehtomas/peptrackerv1). This is the single source of truth —
+  edit this file. (An older standalone copy may still exist on the Desktop root; ignore it.)
+- **Local link:** `file:///C:/Users/thoma/OneDrive/Desktop/NexLabs%20Peptides/peptide-tracker.html`
 - **Data storage:** browser `localStorage`, key `peptideTracker.v1` (per-browser, per-device).
   No data syncs across devices. Settings → Export/Import is the manual backup/transfer.
-- `.claude/launch.json` runs `python -m http.server 8731 --directory <Desktop>` for previewing,
-  so the server serves the Desktop folder; navigate to `/peptide-tracker.html`.
+- `.claude/launch.json` runs `python -m http.server 8731` (serves this folder); navigate to
+  `/peptide-tracker.html`.
+- **Auto-sync to GitHub:** a `Stop` hook (`.claude/settings.json` → `.claude/sync.ps1`) stages,
+  commits, and pushes to `origin/main` after each turn. Still commit with a DESCRIPTIVE message
+  after meaningful changes; the hook is a backstop (it pushes your commit, or auto-commits any
+  leftovers as "auto-sync: <timestamp>"). So GitHub always has the latest.
 
 ## How to run / preview
 - For the user: just double-click the file, or use the `file://` link above.

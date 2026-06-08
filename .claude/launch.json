@@ -4,7 +4,7 @@
     {
       "name": "peptide-tracker",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8731", "--directory", "C:\\Users\\thoma\\OneDrive\\Desktop"],
+      "runtimeArgs": ["-m", "http.server", "8731"],
       "port": 8731
     }
   ]
