@@ -1,8 +1,9 @@
 # Peptide Tracker
 
-A personal, single-file peptide-tracking web app — no build step, no backend, no dependencies.
-Just open **`peptide-tracker.html`** in any browser. All data is stored locally in your browser
-(`localStorage`); use **Settings → Export/Import** to back up or move it between devices.
+A single-file peptide-tracking web app (`index.html`) — no build step, all HTML/CSS/JS inline.
+Sign in with **email + password** and your data is saved to the cloud (Supabase) and synced across
+your devices. Each user's data is private to them. **Settings → Export/Import** still works as a
+manual backup.
 
 ## Features
 - **Peptides library** — quick-pick dropdown of common peptides, default dose (mcg **or** mg),
@@ -23,12 +24,17 @@ Just open **`peptide-tracker.html`** in any browser. All data is stored locally 
 - **4 themes** — Midnight, Warm, Crisp, Retro (gear icon, top-right).
 
 ## Run
-Double-click `peptide-tracker.html`, or serve the folder with any static server
-(e.g. `python -m http.server`) and open the file.
+Serve the folder with any static server (e.g. `python -m http.server`) and open `index.html`,
+then sign in. (Login/cloud sync need a network connection.)
 
-## Hosting (optional)
-Rename to `index.html` and drop it on a static host (Netlify Drop, Cloudflare Pages, GitHub
-Pages) for a shareable link. Each visitor keeps their own data in their own browser.
+## Hosting
+`index.html` is at the repo root, so connect this repo to a static host (Cloudflare Pages, GitHub
+Pages, or Netlify) for a shareable `https://` link. Every push auto-deploys. Anyone can sign up;
+each user gets their own private, cloud-synced data.
+
+## Backend
+Auth + storage use **Supabase** (email/password). Each user's full app state is stored as one JSON
+row in the `trackers` table, isolated per-user via Row-Level Security.
 
 ---
 Built with [Claude Code](https://claude.com/claude-code).

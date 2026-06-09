@@ -1,31 +1,38 @@
 # Peptide Tracker
 
-A personal peptide-tracking web app. **Single self-contained file** — no build step, no
-backend, no dependencies. Open `peptide-tracker.html` directly in a browser.
+A personal peptide-tracking web app. **Single self-contained file** (`index.html`) — no build
+step, all HTML/CSS/JS inline. Loads `supabase-js` from CDN for auth + cloud storage.
 
-- **Main file:** `peptide-tracker.html` (HTML + CSS + JS all inline), in THIS folder, which is a
-  git repo (remote: github.com/awesomehtomas/peptrackerv1). This is the single source of truth —
-  edit this file. (An older standalone copy may still exist on the Desktop root; ignore it.)
-- **Local link:** `file:///C:/Users/thoma/OneDrive/Desktop/NexLabs%20Peptides/peptide-tracker.html`
-- **Data storage:** browser `localStorage`, key `peptideTracker.v1` (per-browser, per-device).
-  No data syncs across devices. Settings → Export/Import is the manual backup/transfer.
+- **Main file:** `index.html` (HTML + CSS + JS all inline), in THIS folder, which is a
+  git repo (remote: github.com/awesomehtomas/peptrackerv1). Single source of truth — edit it.
+  (An older standalone `peptide-tracker.html` copy may still exist on the Desktop root; ignore it.)
+- **Local link:** `file:///C:/Users/thoma/OneDrive/Desktop/NexLabs%20Peptides/index.html`
+  (but cloud sync/login work best when served over http/https, e.g. the preview server or hosting).
+- **Auth + data storage:** **Supabase** (email/password). Each user's full `state` JSON is one row
+  in the `trackers` table (`user_id`, `data jsonb`), isolated by Row-Level-Security. Config
+  (`SUPABASE_URL`, `SUPABASE_ANON`) is inline near the top of the script; `sb` is the client.
+  A per-user `localStorage` cache (`peptideTracker.v1:<uid>`) is an offline fallback only.
+  Settings → Export/Import still works as manual backup.
 - `.claude/launch.json` runs `python -m http.server 8731` (serves this folder); navigate to
-  `/peptide-tracker.html`.
+  `/` (index.html). Email confirmation is OFF in Supabase, so signup gives an instant session.
 - **Auto-sync to GitHub:** a `Stop` hook (`.claude/settings.json` → `.claude/sync.ps1`) stages,
   commits, and pushes to `origin/main` after each turn. Still commit with a DESCRIPTIVE message
   after meaningful changes; the hook is a backstop (it pushes your commit, or auto-commits any
   leftovers as "auto-sync: <timestamp>"). So GitHub always has the latest.
 
 ## How to run / preview
-- For the user: just double-click the file, or use the `file://` link above.
-- For testing changes here: `preview_start` the `peptide-tracker` config, navigate to
-  `/peptide-tracker.html`, then drive it with `preview_eval` (the app exposes globals like
-  `state`, `peptide()`, `vial()`, `renderAll()`, etc. on `window`). Always
-  `localStorage.removeItem('peptideTracker.v1')` to clean up test data when done.
+- For the user: open via the preview/hosting URL and sign in (login needs network for Supabase).
+- For testing changes here: `preview_start` the `peptide-tracker` config, navigate to `/`, then
+  drive it with `preview_eval` (globals like `state`, `peptide()`, `vial()`, `renderAll()`, `sb`,
+  `currentUser` on `window`). To test the authed app, `await sb.auth.signUp({email,password})`
+  with a **non-example.com** email (Supabase rejects example.com); confirm is off so you get an
+  instant session. Sign out with `await sb.auth.signOut()` when done.
 - There is **no Node** on this machine; Python is available.
 
 ## Architecture
-- Single global `state` object persisted via `save()` / `load()` to localStorage.
+- Single global `state` object; `save()` caches to localStorage + debounce-pushes to Supabase
+  (`pushCloud`); `loadCloud()` fetches the user's row on login. App is gated behind an auth screen
+  (`#authGate`); `onAuthStateChange` → `enterApp(user)` loads data and reveals the app.
 - Tab views toggled by `showView(name)`; everything re-renders via `renderAll()`.
 - All UI is string-template `innerHTML` rendered by per-section `renderX()` functions.
 - Modals via `openModal(html)` / `closeModal()`. Inline `onclick` handlers call global funcs.
