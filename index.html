@@ -578,19 +578,25 @@ function save(){
 }
 async function pushCloud(){
   if(!currentUser || !sb) return;
-  const { error } = await sb.from("trackers").upsert({ user_id: currentUser.id, data: state, updated_at: new Date().toISOString() });
-  setSync(error ? "error" : "ok");
+  try {
+    const { error } = await sb.from("trackers").upsert({ user_id: currentUser.id, data: state, updated_at: new Date().toISOString() });
+    setSync(error ? "error" : "ok");
+  } catch(e){ setSync("error"); }
 }
+// Never throws — falls back to this user's local cache if the cloud is unreachable.
 async function loadCloud(){
   if(!sb || !currentUser){ state = mergeState(null); return; }
-  const { data, error } = await sb.from("trackers").select("data").eq("user_id", currentUser.id).maybeSingle();
-  if(error){ // offline / fetch failed → fall back to this user's local cache
+  let data, error;
+  try { ({ data, error } = await sb.from("trackers").select("data").eq("user_id", currentUser.id).maybeSingle()); }
+  catch(e){ error = e; }
+  if(error){
     try { const raw=localStorage.getItem(cacheKey()); state = mergeState(raw?JSON.parse(raw):null); } catch(e){ state = mergeState(null); }
     setSync("error"); return;
   }
-  if(data && data.data){ state = mergeState(data.data); }
-  else { state = mergeState(null); await sb.from("trackers").upsert({ user_id: currentUser.id, data: state }); }
-  setSync("ok");
+  if(data && data.data){ state = mergeState(data.data); setSync("ok"); return; }
+  state = mergeState(null);
+  try { await sb.from("trackers").upsert({ user_id: currentUser.id, data: state }); setSync("ok"); }
+  catch(e){ setSync("error"); }
 }
 
 /* =========================================================
@@ -1929,15 +1935,20 @@ async function doAuth(){
   if(authMode==="signup" && !data.session){ setAuthMode("signin"); $("#authErr").textContent="Account created — please sign in."; return; }
   // success → onAuthStateChange enters the app
 }
+let entering=false;
 async function enterApp(user){
-  currentUser=user;
-  $("#userEmail").textContent=user.email||"";
-  setSync("ok");
-  await loadCloud();
-  applyTheme();
-  document.body.classList.add("authed");
-  renderAll();
-  maybeNotify();
+  if(entering) return;
+  entering=true;
+  try {
+    currentUser=user;
+    $("#userEmail").textContent=user.email||"";
+    setSync("ok");
+    try { await loadCloud(); } catch(e){}        // loadCloud handles its own errors, but be safe
+    applyTheme();
+    document.body.classList.add("authed");        // ALWAYS reveal the app once signed in
+    renderAll();
+    maybeNotify();
+  } finally { entering=false; }
 }
 
 $("#authSwitch").onclick = ()=> setAuthMode(authMode==="signup"?"signin":"signup");
@@ -1953,7 +1964,8 @@ if(sb){
   sb.auth.onAuthStateChange((event, session)=>{
     setTimeout(()=>{                                  // defer per supabase guidance
       if(session && session.user){
-        if(!currentUser || currentUser.id!==session.user.id) enterApp(session.user);
+        // (re)enter if not already showing the app, or if a different user signed in
+        if(!document.body.classList.contains("authed") || !currentUser || currentUser.id!==session.user.id) enterApp(session.user);
       } else { currentUser=null; showAuth(); }
     }, 0);
   });
