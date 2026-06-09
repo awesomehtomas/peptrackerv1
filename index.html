@@ -553,7 +553,10 @@ const ALL_PEPTIDE_NAMES = COMMON_PEPTIDES.flatMap(([,items])=>items.map(it=>it[0
 /* ---- Supabase client + cloud-backed state ---- */
 const SUPABASE_URL = "https://egjsftjoszqtdfbbnmqe.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnanNmdGpvc3pxdGRmYmJubXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzQ0NTYsImV4cCI6MjA5NjYxMDQ1Nn0.NvIGgTNnVdXFqZ_W7ivr6psU4h5MrDbJGKoBGXoNh5c";
-const sb = (typeof supabase!=="undefined") ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth:{ persistSession:true, autoRefreshToken:true } }) : null;
+const sb = (typeof supabase!=="undefined") ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth:{ persistSession:true, autoRefreshToken:true,
+         lock: async (_name,_timeout,fn)=>await fn() }   // passthrough lock: avoids navigator.locks hangs (e.g. file://)
+}) : null;
 
 let state = structuredClone(DEFAULT_STATE);
 let currentUser = null;
@@ -1896,11 +1899,22 @@ async function doAuth(){
   const email=$("#authEmail").value.trim(), pass=$("#authPass").value;
   if(!email || !pass){ $("#authErr").textContent="Enter your email and password."; return; }
   if(authMode==="signup" && pass.length<6){ $("#authErr").textContent="Password must be at least 6 characters."; return; }
-  $("#authSubmit").disabled=true; $("#authErr").textContent="…";
-  const { data, error } = authMode==="signup"
-    ? await sb.auth.signUp({ email, password:pass })
-    : await sb.auth.signInWithPassword({ email, password:pass });
-  $("#authSubmit").disabled=false; $("#authErr").textContent="";
+  const btn=$("#authSubmit"), label=btn.textContent;
+  btn.disabled=true; btn.textContent="Please wait…"; $("#authErr").textContent="";
+  let data, error;
+  try {
+    const op = authMode==="signup"
+      ? sb.auth.signUp({ email, password:pass })
+      : sb.auth.signInWithPassword({ email, password:pass });
+    // safety timeout so the button never hangs forever
+    ({ data, error } = await Promise.race([ op,
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")), 15000)) ]));
+  } catch(e){
+    btn.disabled=false; btn.textContent=label;
+    $("#authErr").textContent = "Couldn't reach the server. If you opened the file directly (file://), open your hosted/preview link instead.";
+    return;
+  }
+  btn.disabled=false; btn.textContent=label;
   if(error){
     const m=(error.message||"").toLowerCase();
     if(authMode==="signup" && (m.includes("already registered")||m.includes("already exists")||m.includes("user already"))){
