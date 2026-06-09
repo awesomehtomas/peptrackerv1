@@ -1901,8 +1901,18 @@ async function doAuth(){
     ? await sb.auth.signUp({ email, password:pass })
     : await sb.auth.signInWithPassword({ email, password:pass });
   $("#authSubmit").disabled=false; $("#authErr").textContent="";
-  if(error){ $("#authErr").textContent=error.message; return; }
-  if(authMode==="signup" && !data.session){ $("#authErr").textContent="Account created — please sign in."; setAuthMode("signin"); return; }
+  if(error){
+    const m=(error.message||"").toLowerCase();
+    if(authMode==="signup" && (m.includes("already registered")||m.includes("already exists")||m.includes("user already"))){
+      setAuthMode("signin");                       // keeps the email/password fields filled
+      $("#authErr").textContent="That email already has an account — just sign in below.";
+      return;
+    }
+    if(m.includes("not confirmed")){ $("#authErr").textContent="This account hasn't been confirmed. Delete it in Supabase → Authentication → Users and sign up again."; return; }
+    if(m.includes("invalid login")){ $("#authErr").textContent="Wrong email or password. (New here? Tap “Create an account”.)"; return; }
+    $("#authErr").textContent=error.message; return;
+  }
+  if(authMode==="signup" && !data.session){ setAuthMode("signin"); $("#authErr").textContent="Account created — please sign in."; return; }
   // success → onAuthStateChange enters the app
 }
 async function enterApp(user){
