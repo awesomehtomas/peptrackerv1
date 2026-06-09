@@ -315,6 +315,7 @@ body.authed #authGate { display: none; }
     <div id="authErr" class="auth-err"></div>
     <button class="btn" id="authSubmit" style="width:100%;">Sign in</button>
     <div class="auth-toggle">New here? <a id="authSwitch">Create an account</a></div>
+    <div style="text-align:center;font-size:10px;color:var(--text-faint);margin-top:12px;letter-spacing:.04em;">build 7</div>
   </div>
 </div>
 <header>
@@ -1933,7 +1934,10 @@ async function doAuth(){
     $("#authErr").textContent=error.message; return;
   }
   if(authMode==="signup" && !data.session){ setAuthMode("signin"); $("#authErr").textContent="Account created — please sign in."; return; }
-  // success → onAuthStateChange enters the app
+  // reveal the app right now (don't depend on the onAuthStateChange event firing)
+  const u = (data.session && data.session.user) || (data.user) || null;
+  if(u){ enterApp(u); }
+  else { $("#authErr").textContent="Signed in, but no session was returned. Refresh and try again."; }
 }
 let entering=false;
 async function enterApp(user){
