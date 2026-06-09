@@ -315,7 +315,7 @@ body.authed #authGate { display: none; }
     <div id="authErr" class="auth-err"></div>
     <button class="btn" id="authSubmit" style="width:100%;">Sign in</button>
     <div class="auth-toggle">New here? <a id="authSwitch">Create an account</a></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-faint);margin-top:12px;letter-spacing:.04em;">build 7</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-faint);margin-top:12px;letter-spacing:.04em;">build 8</div>
   </div>
 </div>
 <header>
@@ -1940,17 +1940,19 @@ async function doAuth(){
   else { $("#authErr").textContent="Signed in, but no session was returned. Refresh and try again."; }
 }
 let entering=false;
+function withTimeout(promise, ms){ return Promise.race([ promise, new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")), ms)) ]); }
 async function enterApp(user){
   if(entering) return;
   entering=true;
   try {
     currentUser=user;
     $("#userEmail").textContent=user.email||"";
-    setSync("ok");
-    try { await loadCloud(); } catch(e){}        // loadCloud handles its own errors, but be safe
     applyTheme();
-    document.body.classList.add("authed");        // ALWAYS reveal the app once signed in
-    renderAll();
+    document.body.classList.add("authed");        // reveal the app IMMEDIATELY (before any network)
+    renderAll();                                   // first paint with current state
+    try { await withTimeout(loadCloud(), 9000); }  // then pull cloud data — can never freeze the reveal
+    catch(e){ setSync("error"); }
+    renderAll();                                   // repaint with whatever loaded
     maybeNotify();
   } finally { entering=false; }
 }
