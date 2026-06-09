@@ -284,9 +284,39 @@ hr.sep { border: none; border-top: 1px solid var(--border-soft); margin: 16px 0;
   nav.tabs button { padding: 7px 10px; font-size: 13px; }
   .brand span { display: none; }
 }
+/* ===== auth gate + account chip ===== */
+header, main { display: none; }
+body.authed header { display: flex; }
+body.authed main { display: block; }
+#authGate { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--bg); }
+body.authed #authGate { display: none; }
+.auth-card { width: 100%; max-width: 380px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); }
+.auth-brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 16px; letter-spacing: -0.01em; margin-bottom: 20px; }
+.auth-brand .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+#authGate h2 { font-size: 22px; letter-spacing: -0.02em; margin-bottom: 4px; }
+.auth-sub { color: var(--text-dim); font-size: 13.5px; margin-bottom: 18px; }
+.auth-err { color: var(--bad); font-size: 13px; min-height: 18px; margin: 6px 0 10px; }
+.auth-toggle { text-align: center; font-size: 13px; color: var(--text-dim); margin-top: 16px; }
+.auth-toggle a { color: var(--accent); cursor: pointer; font-weight: 600; }
+.sync-status { font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+.user-email { font-size: 12.5px; color: var(--text-dim); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 680px){ .user-email, .sync-status { display: none; } }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="dot"></span><span>Peptide Tracker</span></div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="auth-sub" id="authSub">Sign in to your account.</p>
+    <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <div id="authErr" class="auth-err"></div>
+    <button class="btn" id="authSubmit" style="width:100%;">Sign in</button>
+    <div class="auth-toggle">New here? <a id="authSwitch">Create an account</a></div>
+  </div>
+</div>
 <header>
   <div class="brand"><span class="dot"></span><span>Peptide Tracker</span></div>
   <nav class="tabs" id="tabs">
@@ -299,7 +329,10 @@ hr.sep { border: none; border-top: 1px solid var(--border-soft); margin: 16px 0;
     <button data-view="finances">Finances</button>
   </nav>
   <div class="spacer"></div>
+  <span id="syncStatus" class="sync-status" title="Cloud sync status"></span>
+  <span id="userEmail" class="user-email"></span>
   <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+  <button class="icon-btn" id="logoutBtn" title="Log out">⎋</button>
 </header>
 
 <main>
@@ -517,18 +550,45 @@ const COMMON_PEPTIDES = [
 const PEPTIDE_HL = Object.fromEntries(COMMON_PEPTIDES.flatMap(([,items])=>items.filter(it=>it[1]!=null).map(it=>[it[0],it[1]])));
 const ALL_PEPTIDE_NAMES = COMMON_PEPTIDES.flatMap(([,items])=>items.map(it=>it[0]));
 
-let state = load();
-function load(){
-  try {
-    const raw = localStorage.getItem(KEY);
-    if(!raw) return structuredClone(DEFAULT_STATE);
-    const s = JSON.parse(raw);
-    return Object.assign(structuredClone(DEFAULT_STATE), s,
-      { settings: Object.assign({}, DEFAULT_STATE.settings, s.settings||{}) });
-  } catch(e){ return structuredClone(DEFAULT_STATE); }
-}
-function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+/* ---- Supabase client + cloud-backed state ---- */
+const SUPABASE_URL = "https://egjsftjoszqtdfbbnmqe.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnanNmdGpvc3pxdGRmYmJubXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzQ0NTYsImV4cCI6MjA5NjYxMDQ1Nn0.NvIGgTNnVdXFqZ_W7ivr6psU4h5MrDbJGKoBGXoNh5c";
+const sb = (typeof supabase!=="undefined") ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth:{ persistSession:true, autoRefreshToken:true } }) : null;
+
+let state = structuredClone(DEFAULT_STATE);
+let currentUser = null;
+let saveTimer = null;
 const uid = () => Math.random().toString(36).slice(2,10);
+
+function mergeState(raw){
+  return Object.assign(structuredClone(DEFAULT_STATE), raw||{},
+    { settings: Object.assign({}, DEFAULT_STATE.settings, (raw&&raw.settings)||{}) });
+}
+function cacheKey(){ return currentUser ? KEY+":"+currentUser.id : KEY; }
+// save() stays synchronous (all existing call sites unchanged): cache locally, then debounce a cloud push.
+function save(){
+  try { localStorage.setItem(cacheKey(), JSON.stringify(state)); } catch(e){}
+  if(!currentUser || !sb) return;
+  setSync("saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushCloud, 700);
+}
+async function pushCloud(){
+  if(!currentUser || !sb) return;
+  const { error } = await sb.from("trackers").upsert({ user_id: currentUser.id, data: state, updated_at: new Date().toISOString() });
+  setSync(error ? "error" : "ok");
+}
+async function loadCloud(){
+  if(!sb || !currentUser){ state = mergeState(null); return; }
+  const { data, error } = await sb.from("trackers").select("data").eq("user_id", currentUser.id).maybeSingle();
+  if(error){ // offline / fetch failed → fall back to this user's local cache
+    try { const raw=localStorage.getItem(cacheKey()); state = mergeState(raw?JSON.parse(raw):null); } catch(e){ state = mergeState(null); }
+    setSync("error"); return;
+  }
+  if(data && data.data){ state = mergeState(data.data); }
+  else { state = mergeState(null); await sb.from("trackers").upsert({ user_id: currentUser.id, data: state }); }
+  setSync("ok");
+}
 
 /* =========================================================
    HELPERS
@@ -1813,9 +1873,70 @@ function applyTheme(){ document.documentElement.setAttribute("data-theme", state
 function renderAll(){
   renderDashboard(); renderCalendar(); renderPeptides(); renderVials(); renderSites(); renderProgress(); renderFinances();
 }
-applyTheme();
-renderAll();
-maybeNotify();
+function setSync(s){
+  const el=$("#syncStatus"); if(!el) return;
+  el.textContent = s==="saving" ? "Saving…" : s==="error" ? "⚠ Offline" : "✓ Synced";
+  el.style.color = s==="error" ? "var(--bad)" : "var(--text-faint)";
+}
+
+/* ---- auth UI ---- */
+let authMode = "signin";
+function showAuth(){ document.body.classList.remove("authed"); $("#authGate").style.display="flex"; $("#userEmail").textContent=""; }
+function setAuthMode(m){
+  authMode=m;
+  $("#authTitle").textContent = m==="signup" ? "Create your account" : "Welcome back";
+  $("#authSub").textContent   = m==="signup" ? "Sign up to start tracking — your data stays private to you." : "Sign in to your account.";
+  $("#authSubmit").textContent= m==="signup" ? "Create account" : "Sign in";
+  $("#authSwitch").textContent= m==="signup" ? "Sign in instead" : "Create an account";
+  $("#authPass").setAttribute("autocomplete", m==="signup"?"new-password":"current-password");
+  $("#authErr").textContent="";
+}
+async function doAuth(){
+  if(!sb){ $("#authErr").textContent="Couldn't reach the auth service. Check your connection."; return; }
+  const email=$("#authEmail").value.trim(), pass=$("#authPass").value;
+  if(!email || !pass){ $("#authErr").textContent="Enter your email and password."; return; }
+  if(authMode==="signup" && pass.length<6){ $("#authErr").textContent="Password must be at least 6 characters."; return; }
+  $("#authSubmit").disabled=true; $("#authErr").textContent="…";
+  const { data, error } = authMode==="signup"
+    ? await sb.auth.signUp({ email, password:pass })
+    : await sb.auth.signInWithPassword({ email, password:pass });
+  $("#authSubmit").disabled=false; $("#authErr").textContent="";
+  if(error){ $("#authErr").textContent=error.message; return; }
+  if(authMode==="signup" && !data.session){ $("#authErr").textContent="Account created — please sign in."; setAuthMode("signin"); return; }
+  // success → onAuthStateChange enters the app
+}
+async function enterApp(user){
+  currentUser=user;
+  $("#userEmail").textContent=user.email||"";
+  setSync("ok");
+  await loadCloud();
+  applyTheme();
+  document.body.classList.add("authed");
+  renderAll();
+  maybeNotify();
+}
+
+$("#authSwitch").onclick = ()=> setAuthMode(authMode==="signup"?"signin":"signup");
+$("#authSubmit").onclick = doAuth;
+$("#authPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doAuth(); });
+$("#authEmail").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#authPass").focus(); });
+$("#logoutBtn").onclick = async ()=>{ if(sb) await sb.auth.signOut(); };
+
+/* ---- boot ---- */
+applyTheme();                 // theme the auth screen too
+setAuthMode("signin");
+if(sb){
+  sb.auth.onAuthStateChange((event, session)=>{
+    setTimeout(()=>{                                  // defer per supabase guidance
+      if(session && session.user){
+        if(!currentUser || currentUser.id!==session.user.id) enterApp(session.user);
+      } else { currentUser=null; showAuth(); }
+    }, 0);
+  });
+} else {
+  showAuth();
+  $("#authErr").textContent="Couldn't load the sign-in library. Check your connection and refresh.";
+}
 </script>
 </body>
 </html>
